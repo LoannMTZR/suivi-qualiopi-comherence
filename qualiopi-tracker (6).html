@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivi Formation — Qualiopi</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#ffffff;--sur:#f5f5f5;--sur2:#ebebeb;--sur3:#e0e0e0;--brd:#d0d0d0;
+  --txt:#111111;--mu:#444466;--f:#5048e5;--fl:#3730a3;--a:#ff6b6b;--al:#cc0000;
+  --ok:#1a7a3a;--wa:#92600a;--da:#c0000a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden;}
+
+/* ── HEADER ── */
+header{background:var(--sur);border-bottom:1px solid var(--brd);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100;}
+.logo{font-family:'DM Serif Display',serif;font-size:22px;letter-spacing:-.5px;}
+.logo em{color:var(--fl);font-style:italic;}
+header .actions{display:flex;gap:8px;}
+
+/* ── NAV ── */
+.ntabs{display:flex;border-bottom:1px solid var(--brd);background:var(--sur);padding:0 32px;overflow-x:auto;gap:0;}
+.ntab{padding:14px 20px;cursor:pointer;font-size:13px;font-weight:500;color:var(--mu);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;white-space:nowrap;user-select:none;}
+.ntab:hover{color:var(--txt);}
+.ntab.active{color:var(--fl);border-bottom-color:var(--fl);}
+
+/* ── BUTTONS ── */
+.btn{padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+.bp{background:var(--f);color:#fff;}.bp:hover{background:var(--fl);transform:translateY(-1px);}
+.bg{background:transparent;color:var(--mu);border:1px solid var(--brd);}.bg:hover{border-color:var(--mu);color:var(--txt);}
+.bd{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3);}.bd:hover{background:rgba(239,68,68,.25);}
+.bsm{padding:5px 12px;font-size:12px;}
+
+main{padding:28px 32px;max-width:1600px;margin:0 auto;}
+.vw{display:none;}.vw.active{display:block;}
+
+/* ── STATS ── */
+.sbar{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:28px;}
+.sc{background:var(--sur);border:1px solid var(--brd);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden;cursor:default;}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.sc.c1::before{background:var(--f);}.sc.c2::before{background:var(--da);}
+.sc.c3::before{background:var(--wa);}.sc.c4::before{background:var(--ok);}
+.sc.c5::before{background:#a855f7;}
+.sn{font-family:'DM Serif Display',serif;font-size:34px;line-height:1;margin-bottom:4px;}
+.sl{font-size:11px;color:var(--mu);font-weight:500;letter-spacing:.5px;text-transform:uppercase;}
+
+/* ── À FAIRE CETTE SEMAINE ── */
+.week-panel{background:var(--sur);border:1px solid var(--brd);border-radius:14px;margin-bottom:28px;overflow:hidden;}
+.week-hdr{padding:16px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;}
+.week-title{font-family:'DM Serif Display',serif;font-size:18px;display:flex;align-items:center;gap:10px;}
+.week-badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(239,68,68,.2);color:#fca5a5;}
+.week-body{padding:4px 0;}
+.week-row{display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--brd);transition:background .15s;}
+.week-row:last-child{border-bottom:none;}
+.week-row:hover{background:var(--sur2);}
+.week-ev{font-size:11px;font-weight:600;color:var(--fl);min-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.week-ev.at-ev{color:var(--al);}
+.week-ins{font-size:11px;color:var(--mu);min-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.week-task{font-size:13px;flex:1;}
+.week-ddl{font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;white-space:nowrap;}
+.week-ddl.da{background:rgba(239,68,68,.15);color:#fca5a5;}
+.week-ddl.wa{background:rgba(245,158,11,.15);color:#fcd34d;}
+.week-ddl.od{background:rgba(239,68,68,.08);color:#f87171;}
+.week-chk{width:18px;height:18px;border-radius:5px;border:2px solid var(--brd);background:transparent;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;font-size:10px;}
+.week-chk.ck{background:var(--ok);border-color:var(--ok);color:#fff;}
+.week-empty{padding:20px;text-align:center;color:var(--mu);font-size:13px;}
+
+/* ── FILTERS ── */
+.frow{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;align-items:center;}
+.flbl{font-size:12px;color:var(--mu);font-weight:500;}
+.fb{padding:6px 14px;border-radius:20px;border:1px solid var(--brd);background:transparent;color:var(--mu);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;}
+.fb:hover{border-color:var(--mu);color:var(--txt);}
+.fb.on{background:var(--f);border-color:var(--f);color:#fff;}
+.fb.oa.on{background:var(--a);border-color:var(--a);}
+
+/* ── EVENT CARDS ── */
+.egrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:18px;}
+.ecard{background:var(--sur);border:1px solid var(--brd);border-radius:14px;overflow:hidden;transition:all .25s;cursor:pointer;}
+.ecard:hover{border-color:var(--f);transform:translateY(-2px);box-shadow:0 8px 30px rgba(108,99,255,.15);}
+.ecard.at:hover{border-color:var(--a);box-shadow:0 8px 30px rgba(255,107,107,.15);}
+.ech{padding:14px 16px 12px;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:1px solid var(--brd);}
+.etn{font-size:14px;font-weight:600;margin-bottom:3px;padding-right:8px;}
+.em{font-size:11px;color:var(--mu);}
+.badge{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;padding:3px 9px;border-radius:20px;flex-shrink:0;}
+.bf{background:rgba(108,99,255,.2);color:var(--fl);}
+.ba{background:rgba(255,107,107,.2);color:var(--al);}
+.ecb{padding:12px 16px;}
+.tmini{display:flex;align-items:center;gap:8px;font-size:12px;padding:5px 8px;border-radius:6px;background:var(--sur2);margin-bottom:4px;}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dot.ok{background:var(--ok);}.dot.wa{background:var(--wa);}.dot.da{background:var(--da);}.dot.dn{background:var(--brd);}
+.ecf{padding:9px 16px;border-top:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;}
+.pb{flex:1;height:4px;background:var(--brd);border-radius:2px;margin-right:10px;overflow:hidden;}
+.pf{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--f),var(--fl));transition:width .4s;}
+.at .pf{background:linear-gradient(90deg,var(--a),var(--al));}
+.pct{font-size:11px;color:var(--mu);}
+.ibdg{font-size:10px;background:rgba(108,99,255,.15);color:var(--fl);padding:2px 7px;border-radius:10px;margin-left:5px;}
+
+/* ── KANBAN ── */
+.kanban{display:grid;gap:12px;overflow-x:auto;padding-bottom:8px;}
+.kboard{display:flex;gap:12px;min-width:max-content;align-items:flex-start;}
+.kcol{background:var(--sur2);border:1px solid var(--brd);border-radius:12px;width:260px;flex-shrink:0;overflow:hidden;}
+.kcol-hdr{padding:12px 14px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;}
+.kcol-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+.kcol-count{font-size:11px;color:var(--mu);background:var(--sur3);padding:1px 7px;border-radius:10px;}
+.kcol.kp1 .kcol-hdr{border-top:3px solid #a78bfa;}
+.kcol.kp2 .kcol-hdr{border-top:3px solid var(--f);}
+.kcol.kp3 .kcol-hdr{border-top:3px solid var(--wa);}
+.kcol.kp4 .kcol-hdr{border-top:3px solid var(--ok);}
+.kcol.kp5 .kcol-hdr{border-top:3px solid #22d3ee;}
+.kcol-body{padding:8px;display:flex;flex-direction:column;gap:6px;max-height:480px;overflow-y:auto;}
+.kcard{background:var(--sur);border:1px solid var(--brd);border-radius:9px;padding:10px 12px;transition:all .2s;}
+.kcard:hover{border-color:var(--brd);box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.kcard.done-k{opacity:.5;}
+.kc-name{font-size:12px;font-weight:500;margin-bottom:4px;display:flex;align-items:flex-start;gap:6px;}
+.kc-doc{font-size:10px;color:var(--mu);}
+.kc-foot{display:flex;align-items:center;justify-content:space-between;margin-top:6px;}
+.kc-ddl{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;}
+.kc-ddl.ok{background:rgba(34,197,94,.1);color:#86efac;}
+.kc-ddl.wa{background:rgba(245,158,11,.1);color:#fcd34d;}
+.kc-ddl.da{background:rgba(239,68,68,.1);color:#fca5a5;}
+.kc-ddl.dn{color:var(--mu);font-weight:400;}
+.kchk{width:16px;height:16px;border-radius:4px;border:2px solid var(--brd);background:transparent;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;transition:all .15s;margin-top:1px;}
+.kchk.ck{background:var(--ok);border-color:var(--ok);color:#fff;}
+.kcol-empty{padding:16px;text-align:center;font-size:11px;color:var(--mu);}
+
+/* ── CALENDAR ── */
+.chead{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.cml{font-family:'DM Serif Display',serif;font-size:28px;}
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cdh{text-align:center;padding:10px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);}
+.cd{background:var(--sur);border:1px solid var(--brd);border-radius:8px;min-height:90px;padding:7px;}
+.cd.oth{opacity:.3;}.cd.tod{border-color:var(--f);}
+.cdn{font-size:12px;font-weight:600;color:var(--mu);margin-bottom:4px;}
+.cd.tod .cdn{color:var(--fl);}
+.cev{font-size:10px;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cev.fo{background:rgba(108,99,255,.3);color:var(--fl);}.cev.at{background:rgba(255,107,107,.3);color:var(--al);}
+.ctk{font-size:10px;padding:2px 5px;border-radius:4px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ctk.da{background:rgba(239,68,68,.2);color:#fca5a5;}.ctk.wa{background:rgba(245,158,11,.2);color:#fcd34d;}.ctk.ok{background:rgba(34,197,94,.2);color:#86efac;}
+
+/* ── FORMATEURS ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;}
+.fcard{background:var(--sur);border:1px solid var(--brd);border-radius:14px;padding:18px;cursor:pointer;transition:all .2s;}
+.fcard:hover{border-color:var(--f);transform:translateY(-1px);}
+.fcard-hdr{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.fav{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,var(--f));display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:18px;flex-shrink:0;}
+.fcard-name{font-size:15px;font-weight:600;}
+.fcard-sub{font-size:12px;color:var(--mu);}
+.fcard-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.ftag{font-size:10px;padding:2px 8px;border-radius:5px;background:var(--sur2);color:var(--mu);border:1px solid var(--brd);}
+.fcard-stats{display:flex;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid var(--brd);}
+.fstat{text-align:center;}
+.fstat-n{font-family:'DM Serif Display',serif;font-size:22px;color:var(--fl);}
+.fstat-l{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;}
+
+/* ── MODAL ── */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.mo.open{opacity:1;pointer-events:all;}
+.mdl{background:var(--sur);border:1px solid var(--brd);border-radius:18px;width:min(700px,96vw);max-height:91vh;overflow-y:auto;transform:translateY(16px);transition:transform .25s;}
+.mdl.wd{width:min(960px,96vw);}
+.mo.open .mdl{transform:translateY(0);}
+.mh{padding:20px 24px 16px;border-bottom:1px solid var(--brd);display:flex;align-items:flex-start;justify-content:space-between;position:sticky;top:0;background:var(--sur);z-index:1;border-radius:18px 18px 0 0;}
+.mt{font-family:'DM Serif Display',serif;font-size:22px;}
+.mx{background:var(--sur2);border:none;color:var(--mu);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;margin-left:12px;}
+.mx:hover{color:var(--txt);background:var(--brd);}
+.mb{padding:20px 24px;}
+.fg{margin-bottom:15px;}
+.lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);margin-bottom:6px;display:block;}
+.fi,.fta{width:100%;background:var(--sur2);border:1px solid var(--brd);border-radius:8px;color:var(--txt);padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:14px;transition:border-color .2s;}
+.fi:focus,.fta:focus{outline:none;border-color:var(--f);}
+.fta{resize:vertical;min-height:80px;}
+.ttog{display:flex;gap:10px;}
+.tbtn{flex:1;padding:10px;border-radius:10px;border:2px solid var(--brd);background:transparent;color:var(--mu);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;text-align:center;}
+.tbtn:hover{border-color:var(--mu);color:var(--txt);}
+.tbtn.af{border-color:var(--f);background:rgba(108,99,255,.1);color:var(--fl);}
+.tbtn.aa{border-color:var(--a);background:rgba(255,107,107,.1);color:var(--al);}
+.srow{display:flex;align-items:center;gap:10px;background:var(--sur2);padding:8px 12px;border-radius:8px;border:1px solid var(--brd);margin-bottom:6px;}
+.slbl{font-size:12px;color:var(--mu);min-width:76px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+/* ── TASK ROWS (in modal) ── */
+.tsec{margin-bottom:20px;}
+.tsh{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--mu);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.tsh::after{content:'';flex:1;height:1px;background:var(--brd);}
+.trow{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:var(--sur2);margin-bottom:4px;border:1px solid transparent;transition:border-color .2s;}
+.trow:hover{border-color:var(--brd);}
+.trow.dr{opacity:.5;}
+.tchk{width:18px;height:18px;border-radius:5px;border:2px solid var(--brd);background:transparent;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;font-size:10px;}
+.tchk.ck{background:var(--ok);border-color:var(--ok);color:#fff;}
+.ti{flex:1;min-width:0;}
+.tn{font-size:13px;font-weight:500;}
+.tdoc{font-size:11px;color:var(--mu);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.qbdg{font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(108,99,255,.15);color:var(--fl);flex-shrink:0;}
+.ddl{font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px;white-space:nowrap;}
+.ddl.ok{background:rgba(34,197,94,.15);color:#86efac;}
+.ddl.wa{background:rgba(245,158,11,.15);color:#fcd34d;}
+.ddl.da{background:rgba(239,68,68,.15);color:#fca5a5;}
+.ddl.dn{background:rgba(255,255,255,.05);color:var(--mu);text-decoration:line-through;}
+
+/* ── MODAL TABS ── */
+.mtabs{display:flex;border-bottom:1px solid var(--brd);margin-bottom:18px;}
+.mtab{padding:9px 15px;cursor:pointer;font-size:13px;font-weight:500;color:var(--mu);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;white-space:nowrap;}
+.mtab:hover{color:var(--txt);}
+.mtab.active{color:var(--fl);border-bottom-color:var(--fl);}
+
+/* ── INSCRITS ── */
+.ins-box{background:var(--sur3);border-radius:12px;padding:14px;margin-bottom:16px;border:1px solid var(--brd);}
+.ins-bh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;}
+.icard{background:var(--sur);border:1px solid var(--brd);border-radius:10px;padding:12px;cursor:pointer;transition:all .2s;}
+.icard:hover{border-color:var(--f);transform:translateY(-1px);}
+.in2{font-size:13px;font-weight:600;margin-bottom:2px;}
+.imeta{font-size:11px;color:var(--mu);}
+.iurg{font-size:10px;color:#fca5a5;margin-top:4px;}
+.ipp{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.ipb{flex:1;height:3px;background:var(--brd);border-radius:2px;overflow:hidden;}
+.ipf{height:100%;border-radius:2px;background:var(--f);}
+.ipct{font-size:10px;color:var(--mu);}
+
+/* ── DOC STATUS CARDS ── */
+.idoc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:7px;margin-bottom:16px;}
+.idoc-card{background:var(--sur2);border:1px solid var(--brd);border-radius:9px;padding:10px;text-align:center;cursor:pointer;transition:all .2s;}
+.idoc-card:hover{border-color:var(--f);}
+.idoc-card.done-d{border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.06);}
+.idoc-card.part-d{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.04);}
+.idoc-icon{font-size:18px;margin-bottom:4px;}
+.idoc-name{font-size:10px;font-weight:500;line-height:1.3;}
+.idoc-status{font-size:10px;margin-top:3px;font-weight:600;color:var(--mu);}
+.idoc-card.done-d .idoc-status{color:var(--ok);}
+.idoc-card.part-d .idoc-status{color:var(--wa);}
+
+/* ── AVATAR ── */
+.av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--f),var(--fl));display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:18px;flex-shrink:0;color:#fff;}
+
+/* ── INSATISFACTION ── */
+.insat-row{display:flex;gap:10px;padding:9px 12px;border-radius:9px;background:var(--sur2);margin-bottom:4px;align-items:flex-start;}
+.insat-dot{width:7px;height:7px;border-radius:50%;background:var(--da);flex-shrink:0;margin-top:4px;}
+
+/* ── QUALIOPI REF ── */
+.qgrid{display:flex;flex-direction:column;gap:10px;}
+.qcard{background:var(--sur);border:1px solid var(--brd);border-radius:14px;overflow:hidden;transition:border-color .2s;}
+.qcard.nc-maj{border-left:4px solid var(--da);}
+.qcard.nc-min{border-left:4px solid var(--wa);}
+.qcard-hdr{padding:14px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;user-select:none;}
+.qcard-hdr:hover{background:var(--sur2);}
+.qnum{font-family:'DM Serif Display',serif;font-size:28px;width:42px;flex-shrink:0;line-height:1;}
+.qcard.nc-maj .qnum{color:#fca5a5;}
+.qcard.nc-min .qnum{color:#fcd34d;}
+.qcard:not(.nc-maj):not(.nc-min) .qnum{color:var(--fl);}
+.qhead-info{flex:1;}
+.qt{font-size:14px;font-weight:600;margin-bottom:3px;}
+.qnc-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block;}
+.qnc-badge.maj{background:rgba(239,68,68,.2);color:#fca5a5;}
+.qnc-badge.min{background:rgba(245,158,11,.2);color:#fcd34d;}
+.qcard-chevron{font-size:13px;color:var(--mu);transition:transform .2s;flex-shrink:0;}
+.qcard-chevron.open{transform:rotate(180deg);}
+.qcard-body{padding:0 18px 18px;display:none;}
+.qcard-body.open{display:block;}
+.qsec{margin-bottom:14px;}
+.qsec-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--mu);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.qsec-title::after{content:'';flex:1;height:1px;background:var(--brd);}
+.qattend{font-size:13px;line-height:1.65;color:var(--txt);background:var(--sur2);border-radius:9px;padding:11px 14px;}
+.qproof-list,.qerr-list{display:flex;flex-direction:column;gap:5px;}
+.qproof{display:flex;align-items:flex-start;gap:8px;font-size:12px;padding:7px 10px;border-radius:7px;background:var(--sur2);}
+.qerr{display:flex;align-items:flex-start;gap:8px;font-size:12px;padding:7px 10px;border-radius:7px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.12);}
+.qconseil{background:rgba(108,99,255,.08);border:1px solid rgba(108,99,255,.2);border-radius:9px;padding:11px 14px;font-size:12px;line-height:1.6;}
+.qdocs{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px;}
+.qdoc{font-size:11px;padding:3px 9px;border-radius:6px;background:var(--sur2);color:var(--mu);border:1px solid var(--brd);}
+.qcrit-hdr{background:var(--sur2);border-radius:10px;padding:12px 16px;margin-bottom:10px;border-left:3px solid var(--f);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.qcrit-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--fl);}
+.qcrit-desc{font-size:12px;color:var(--mu);margin-top:3px;}
+.qcrit-erreurs{font-size:11px;color:var(--wa);margin-top:4px;}
+.audit-banner{background:var(--sur);border:1px solid var(--brd);border-radius:12px;padding:16px 24px;margin-bottom:22px;display:flex;gap:0;flex-wrap:wrap;align-items:stretch;}
+.audit-stat{text-align:center;flex:1;min-width:90px;padding:8px 16px;border-right:1px solid var(--brd);}
+.audit-stat:last-child{border-right:none;}
+.audit-n{font-family:'DM Serif Display',serif;font-size:26px;line-height:1;margin-bottom:3px;}
+.audit-l{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;}
+
+/* ── MISC ── */
+.psumm{background:var(--sur2);border-radius:10px;padding:13px;margin-top:8px;}
+.sep{height:1px;background:var(--brd);margin:14px 0;}
+.empty{text-align:center;padding:60px 20px;color:var(--mu);}
+.empty .ei{font-size:44px;margin-bottom:14px;}
+.empty h3{font-family:'DM Serif Display',serif;font-size:22px;color:var(--txt);margin-bottom:7px;}
+.sec-title{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;}
+
+.cev.at{background:rgba(239,68,68,0.12)!important;color:#b30000!important;}
+.cev.fo{background:rgba(80,72,229,0.12)!important;color:#3730a3!important;}
+.ctk.da{background:rgba(239,68,68,0.12)!important;color:#7a0008!important;}
+.ctk.wa{background:rgba(245,158,11,0.15)!important;color:#6b4200!important;}
+.ctk.ok{background:rgba(34,197,94,0.12)!important;color:#0d5c28!important;}
+.ddl.da,.kc-ddl.da,.week-ddl.da{color:#7a0008!important;}
+.ddl.wa,.kc-ddl.wa,.week-ddl.wa{color:#6b4200!important;}
+.ddl.ok,.kc-ddl.ok,.week-ddl.ok{color:#0d5c28!important;}
+.week-ddl.da{background:rgba(239,68,68,0.12)!important;}
+.ba{color:#b30000!important;}
+
+  main{padding:16px;}header,.ntabs{padding:0 16px;}
+  .sbar{grid-template-columns:repeat(2,1fr);}
+  .egrid{grid-template-columns:1fr;}
+  .cd{min-height:56px;}
+  .g2{grid-template-columns:1fr;}
+}
+
+/* ── AUTH ── */
+#auth-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;}
+.auth-box{background:var(--sur);border:1px solid var(--brd);border-radius:20px;padding:40px 44px;width:min(420px,92vw);text-align:center;}
+.auth-logo{font-family:'DM Serif Display',serif;font-size:28px;margin-bottom:6px;}
+.auth-logo em{color:var(--fl);font-style:italic;}
+.auth-sub{font-size:13px;color:var(--mu);margin-bottom:32px;}
+.auth-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);margin-bottom:8px;display:block;text-align:left;}
+.auth-input{width:100%;background:var(--sur2);border:1px solid var(--brd);border-radius:10px;color:var(--txt);padding:13px 16px;font-family:'DM Sans',sans-serif;font-size:15px;transition:border-color .2s;margin-bottom:12px;}
+.auth-input:focus{outline:none;border-color:var(--f);}
+.auth-btn{width:100%;padding:13px;border-radius:10px;border:none;background:var(--f);color:#fff;font-family:'DM Serif Display',serif;font-size:17px;cursor:pointer;transition:all .2s;margin-top:4px;}
+.auth-btn:hover{background:var(--fl);transform:translateY(-1px);}
+.auth-err{font-size:12px;color:#fca5a5;margin-top:10px;min-height:18px;}
+.auth-setup-note{font-size:12px;color:var(--mu);margin-top:20px;line-height:1.6;background:var(--sur2);border-radius:8px;padding:10px 14px;text-align:left;}
+.auth-setup-note b{color:var(--fl);}
+#app-shell{display:none;}
+.logout-btn{background:transparent;border:1px solid var(--brd);color:var(--mu);padding:5px 12px;border-radius:7px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;transition:all .2s;}
+.logout-btn:hover{border-color:var(--da);color:#fca5a5;}
+</style>
+</head>
+<body>
+
+<!-- ══ AUTH SCREEN ══ -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">Suivi <em>Qualiopi</em></div>
+    <div class="auth-sub">Connectez-vous pour accéder à l'outil</div>
+    <label class="auth-label">Adresse email</label>
+    <input type="email" class="auth-input" id="auth-email" placeholder="vous@exemple.com" onkeydown="if(event.key==='Enter')authSubmit()">
+    <label class="auth-label">Mot de passe</label>
+    <input type="password" class="auth-input" id="auth-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')authSubmit()">
+    <button class="auth-btn" onclick="authSubmit()">Se connecter →</button>
+    <div class="auth-err" id="auth-err"></div>
+    <div style="margin-top:14px;text-align:center">
+      <button onclick="authReset()" style="background:none;border:none;color:var(--mu);font-size:12px;cursor:pointer;text-decoration:underline;">Mot de passe oublié ?</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app-shell">
+
+<header>
+  <div class="logo">Suivi <em>Qualiopi</em></div>
+  <div class="actions">
+    <span id="sync-badge" style="font-size:11px;color:var(--ok);opacity:0;transition:opacity .3s">✓ Synchronisé</span>
+    <span id="user-email" style="font-size:11px;color:var(--mu)"></span>
+    <button class="btn bg bsm" onclick="oM('form-modal')">+ Formateur</button>
+    <button class="btn bp bsm" onclick="oM('add-modal')">+ Événement</button>
+    <button class="logout-btn" onclick="logout()" title="Se déconnecter">🔒 Déco</button>
+  </div>
+</header>
+
+<div class="ntabs">
+  <div class="ntab active" onclick="swV('dashboard',this)">📊 Tableau de bord</div>
+  <div class="ntab" onclick="swV('calendar',this)">📅 Calendrier</div>
+  <div class="ntab" onclick="swV('formateurs',this)">👤 Formateurs</div>
+  <div class="ntab" onclick="swV('qualiopi',this)">🎖 Référentiel</div>
+</div>
+
+<main>
+
+<!-- ══ DASHBOARD ══ -->
+<div class="vw active" id="vw-dashboard">
+  <div class="sbar" id="sbar"></div>
+
+  <!-- À FAIRE CETTE SEMAINE -->
+  <div class="week-panel">
+    <div class="week-hdr">
+      <div class="week-title">⚡ À faire cette semaine <span class="week-badge" id="week-count">0</span></div>
+      <span style="font-size:12px;color:var(--mu)" id="week-range"></span>
+    </div>
+    <div id="week-body" class="week-body"></div>
+  </div>
+
+  <!-- EVENTS -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div style="font-family:'DM Serif Display',serif;font-size:20px;">Toutes les formations & ateliers</div>
+  </div>
+  <div class="frow">
+    <span class="flbl">Filtrer :</span>
+    <button class="fb on" data-f="all"       onclick="sf(this,'all')">Tout</button>
+    <button class="fb"    data-f="formation"  onclick="sf(this,'formation')">Formations</button>
+    <button class="fb oa" data-f="atelier"    onclick="sf(this,'atelier')">Ateliers</button>
+    <button class="fb"    data-f="urgent"     onclick="sf(this,'urgent')">⚠ Urgent</button>
+    <button class="fb"    data-f="upcoming"   onclick="sf(this,'upcoming')">Prochains</button>
+  </div>
+  <div class="egrid" id="egrid"></div>
+</div>
+
+<!-- ══ CALENDAR ══ -->
+<div class="vw" id="vw-calendar">
+  <div class="chead">
+    <div class="cml" id="cml"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn bg bsm" onclick="nM(-1)">‹ Précédent</button>
+      <button class="btn bg bsm" onclick="nM(1)">Suivant ›</button>
+    </div>
+  </div>
+  <div class="frow">
+    <span class="flbl">Afficher :</span>
+    <button class="fb on" data-c="all"       onclick="scf(this,'all')">Tout</button>
+    <button class="fb"    data-c="events"    onclick="scf(this,'events')">Événements</button>
+    <button class="fb"    data-c="tasks"     onclick="scf(this,'tasks')">Tâches</button>
+    <button class="fb"    data-c="formation" onclick="scf(this,'formation')">Formations</button>
+    <button class="fb oa" data-c="atelier"   onclick="scf(this,'atelier')">Ateliers</button>
+  </div>
+  <div class="cgrid" id="cgrid"></div>
+</div>
+
+<!-- ══ FORMATEURS ══ -->
+<div class="vw" id="vw-formateurs">
+  <div class="sec-title">
+    👤 Formateurs
+    <button class="btn bp bsm" onclick="oM('form-modal')">+ Ajouter un formateur</button>
+  </div>
+  <div class="form-grid" id="form-grid"></div>
+</div>
+
+<!-- ══ QUALIOPI ══ -->
+<div class="vw" id="vw-qualiopi">
+  <div style="font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:20px;">Référentiel Qualiopi</div>
+  <div class="qgrid" id="qgrid"></div>
+</div>
+
+</main>
+
+<!-- ══════ MODALS ══════ -->
+
+<!-- ADD EVENT -->
+<div class="mo" id="add-modal"><div class="mdl" style="width:min(780px,96vw)">
+  <div class="mh"><div class="mt">Nouvel événement</div><button class="mx" onclick="cM('add-modal')">×</button></div>
+  <div class="mb">
+
+    <!-- TYPE -->
+    <div class="fg"><label class="lbl">Type</label>
+      <div class="ttog">
+        <button class="tbtn af" id="bf" onclick="sT('formation')">🎓 Formation (Qualiopi)</button>
+        <button class="tbtn"    id="ba" onclick="sT('atelier')">💡 Atelier / Conférence</button>
+      </div>
+    </div>
+
+    <!-- FORMAT (formation seulement) -->
+    <div id="fg-sous">
+      <div class="fg"><label class="lbl">Format</label>
+        <div class="ttog">
+          <button class="tbtn af" id="bi" onclick="sS('inter')">👥 Inter-entreprises</button>
+          <button class="tbtn"    id="bn" onclick="sS('intra')">🏢 Intra-entreprise</button>
+        </div>
+      </div>
+
+      <!-- MODALITÉ -->
+      <div class="fg"><label class="lbl">Modalité</label>
+        <div class="ttog">
+          <button class="tbtn af" id="bpres" onclick="sMod('presentiel')">🏛 Présentiel</button>
+          <button class="tbtn"    id="bvisio" onclick="sMod('distanciel')">💻 Distanciel / Visio</button>
+          <button class="tbtn"    id="bhybr"  onclick="sMod('hybride')">🔀 Hybride</button>
+        </div>
+      </div>
+
+      <!-- ALERTE VISIO -->
+      <div id="visio-alert" style="display:none;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:9px;padding:10px 13px;margin-bottom:14px;font-size:12px;color:#fcd34d">
+        ⚠ <b>Formation à distance :</b> une tâche "Procédure gestion des aléas techniques" sera automatiquement ajoutée (obligation Qualiopi).
+      </div>
+
+      <!-- TYPE ACTION -->
+      <div class="g2">
+        <div class="fg"><label class="lbl">Type d'action (réforme 2019)</label>
+          <select class="fi" id="in-action">
+            <option value="action">Action de formation</option>
+            <option value="bilan">Bilan de compétences</option>
+            <option value="vae">VAE — Validation des acquis</option>
+            <option value="apprentissage">Formation par apprentissage</option>
+          </select>
+        </div>
+        <div class="fg"><label class="lbl">Code NSF (domaine)</label>
+          <select class="fi" id="in-nsf">
+            <option value="">— Sélectionner —</option>
+            <optgroup label="300 – Services">
+              <option value="312">312 · Commerce, vente</option>
+              <option value="313">313 · Finances, banque, assurances</option>
+              <option value="315">315 · Ressources humaines</option>
+              <option value="320">320 · Communication plurivalente</option>
+              <option value="321">321 · Journalisme, communication, publicité</option>
+              <option value="322">322 · Techniques imprimerie / édition</option>
+              <option value="323">323 · Image, son, spectacle</option>
+              <option value="326">326 · Informatique, réseaux</option>
+              <option value="331">331 · Santé</option>
+              <option value="333">333 · Enseignement, formation</option>
+              <option value="334">334 · Accueil, hôtellerie, tourisme</option>
+              <option value="335">335 · Animation, sport, loisirs</option>
+              <option value="344">344 · Sécurité, surveillance</option>
+            </optgroup>
+            <optgroup label="400 – Capacités">
+              <option value="413">413 · Développement comportemental / relationnel</option>
+              <option value="414">414 · Développement individuel / organisation</option>
+              <option value="415">415 · Orientation, insertion</option>
+            </optgroup>
+            <optgroup label="100 – Général">
+              <option value="100">100 · Formations générales</option>
+            </optgroup>
+            <optgroup label="200 – Technologies">
+              <option value="201">201 · Automatismes, robotique</option>
+              <option value="326b">326 · Informatique</option>
+            </optgroup>
+            <option value="999">999 · Autres</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- BPF + DIPLOME -->
+      <div class="g2">
+        <div class="fg"><label class="lbl">Inclus dans le BPF</label>
+          <div class="ttog">
+            <button class="tbtn af" id="bbpf-oui" onclick="sBPF(true)">✓ Oui (BPF)</button>
+            <button class="tbtn"    id="bbpf-non" onclick="sBPF(false)">✗ Hors BPF</button>
+          </div>
+        </div>
+        <div class="fg"><label class="lbl">Diplôme / certification visé</label>
+          <select class="fi" id="in-diplome">
+            <option value="">Aucun</option>
+            <option value="rncp">RNCP / CQP inscrit au RNCP</option>
+            <option value="rs">Certification RS</option>
+            <option value="cqp">CQP non inscrit RNCP</option>
+            <option value="n3">Niveau 3 (BEP, CAP)</option>
+            <option value="n4">Niveau 4 (BAC pro)</option>
+            <option value="n5">Niveau 5 (BTS / DUT)</option>
+            <option value="n6">Niveau 6 (Licence)</option>
+            <option value="n7">Niveau 7 (Master)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- CODE INTERNE -->
+      <div class="fg"><label class="lbl">Code interne <span style="font-weight:400;color:var(--mu)">(optionnel)</span></label>
+        <input type="text" class="fi" id="in-code" placeholder="Ex : FORM-2026-042"></div>
+    </div>
+
+    <!-- NOM -->
+    <div class="fg"><label class="lbl">Nom de l'événement</label>
+      <input type="text" class="fi" id="in-name" placeholder="Ex : Parcours client 2026"></div>
+
+    <!-- SESSIONS + LIEU -->
+    <div class="g2">
+      <div class="fg"><label class="lbl">Nombre de sessions</label>
+        <input type="number" class="fi" id="in-sess" value="1" min="1" max="10" oninput="uS()"></div>
+      <div class="fg"><label class="lbl">Lieu</label>
+        <input type="text" class="fi" id="in-lieu" placeholder="La Fabrik, Créacité…"></div>
+    </div>
+    <div class="fg"><label class="lbl">Dates des sessions</label><div id="sess-c"></div></div>
+
+    <!-- FORMATEUR -->
+    <div class="fg"><label class="lbl">Formateur</label>
+      <select class="fi" id="in-form-sel">
+        <option value="">— Sélectionner un formateur —</option>
+      </select>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:10px;">
+      <button class="btn bg" style="flex:1" onclick="cM('add-modal')">Annuler</button>
+      <button class="btn bp" style="flex:1" onclick="addEv()">Créer l'événement →</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- DETAIL EVENT -->
+<div class="mo" id="det-modal"><div class="mdl wd">
+  <div class="mh">
+    <div>
+      <div class="mt" id="d-title">—</div>
+      <div style="font-size:12px;color:var(--mu);margin-top:3px;" id="d-meta">—</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn bg bsm" id="d-kanban-btn" onclick="oKanban()">🗂 Vue Kanban</button>
+      <button class="btn bd bsm" onclick="delEv()">Supprimer</button>
+      <button class="mx" onclick="cM('det-modal')">×</button>
+    </div>
+  </div>
+  <div class="mb">
+    <div class="mtabs">
+      <div class="mtab active" id="dt-tasks"    onclick="swDT('tasks',this)">✅ Tâches formation</div>
+      <div class="mtab"        id="dt-inscrits" onclick="swDT('inscrits',this)">👥 Inscrits</div>
+    </div>
+    <div id="pan-tasks"></div>
+    <div id="pan-inscrits" style="display:none;"></div>
+  </div>
+</div></div>
+
+<!-- KANBAN VIEW -->
+<div class="mo" id="kanban-modal"><div class="mdl" style="width:min(1100px,96vw);">
+  <div class="mh">
+    <div class="mt" id="k-title">Avancement</div>
+    <button class="mx" onclick="cM('kanban-modal')">×</button>
+  </div>
+  <div class="mb" style="overflow-x:auto;">
+    <div class="kboard" id="kboard"></div>
+  </div>
+</div></div>
+
+<!-- ADD INSCRIT -->
+<div class="mo" id="ins-modal"><div class="mdl">
+  <div class="mh"><div class="mt">Ajouter un inscrit</div><button class="mx" onclick="cM('ins-modal')">×</button></div>
+  <div class="mb">
+    <div class="g2">
+      <div class="fg"><label class="lbl">Prénom</label><input type="text" class="fi" id="in-prenom" placeholder="Magali"></div>
+      <div class="fg"><label class="lbl">Nom</label><input type="text" class="fi" id="in-nom" placeholder="Dupont"></div>
+    </div>
+    <div class="g2">
+      <div class="fg"><label class="lbl">Email</label><input type="email" class="fi" id="in-email" placeholder="magali@example.com"></div>
+      <div class="fg"><label class="lbl">Téléphone</label><input type="text" class="fi" id="in-tel" placeholder="06 00 00 00 00"></div>
+    </div>
+    <div class="g2">
+      <div class="fg"><label class="lbl">Entreprise</label><input type="text" class="fi" id="in-ent" placeholder="Créacité"></div>
+      <div class="fg"><label class="lbl">Facturation / Compte client</label><input type="text" class="fi" id="in-fact" placeholder="N° client…"></div>
+    </div>
+    <div class="fg"><label class="lbl">Adaptation handicap</label>
+      <div class="ttog">
+        <button class="tbtn af" id="handi-non" onclick="sH('non')">Non</button>
+        <button class="tbtn"    id="handi-oui" onclick="sH('oui')">Oui — adaptation nécessaire</button>
+      </div>
+    </div>
+    <div class="fg" id="fg-handi" style="display:none;"><label class="lbl">Préciser l'adaptation</label><input type="text" class="fi" id="in-handi" placeholder="Ex : accès PMR, dyslexie…"></div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn bg" style="flex:1" onclick="cM('ins-modal')">Annuler</button>
+      <button class="btn bp" style="flex:1" onclick="addIns()">Ajouter →</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- DETAIL INSCRIT -->
+<div class="mo" id="insd-modal"><div class="mdl wd">
+  <div class="mh">
+    <div class="mt" id="id-title">—</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn bd bsm" id="id-del">Retirer</button>
+      <button class="mx" onclick="cM('insd-modal')">×</button>
+    </div>
+  </div>
+  <div class="mb" id="id-body"></div>
+</div></div>
+
+<!-- ADD / EDIT FORMATEUR -->
+<div class="mo" id="form-modal"><div class="mdl">
+  <div class="mh"><div class="mt" id="fm-title">Nouveau formateur</div><button class="mx" onclick="cM('form-modal')">×</button></div>
+  <div class="mb">
+    <div class="g2">
+      <div class="fg"><label class="lbl">Prénom</label><input type="text" class="fi" id="fm-prenom" placeholder="Philippe"></div>
+      <div class="fg"><label class="lbl">Nom</label><input type="text" class="fi" id="fm-nom" placeholder="Thénot"></div>
+    </div>
+    <div class="g2">
+      <div class="fg"><label class="lbl">Email</label><input type="email" class="fi" id="fm-email" placeholder="philippe@example.com"></div>
+      <div class="fg"><label class="lbl">Téléphone</label><input type="text" class="fi" id="fm-tel" placeholder="06 00 00 00 00"></div>
+    </div>
+    <div class="g2">
+      <div class="fg"><label class="lbl">NDA (N° déclaration activité)</label><input type="text" class="fi" id="fm-nda" placeholder="42670XXXXXXX"></div>
+      <div class="fg"><label class="lbl">SIRET</label><input type="text" class="fi" id="fm-siret" placeholder="XXX XXX XXX XXXXX"></div>
+    </div>
+    <div class="fg"><label class="lbl">Spécialités / thématiques</label><input type="text" class="fi" id="fm-spec" placeholder="Ex : Stratégie digitale, Réseaux sociaux…"></div>
+    <div class="fg"><label class="lbl">Préférence de communication</label>
+      <select class="fi" id="fm-pref">
+        <option value="email">Email</option>
+        <option value="tel">Téléphone</option>
+        <option value="sms">SMS</option>
+        <option value="whatsapp">WhatsApp</option>
+      </select>
+    </div>
+    <div class="fg"><label class="lbl">Chemin d'accès dossier formateur</label><input type="text" class="fi" id="fm-path" placeholder="Ex : /Dropbox/Formateurs/Philippe/"></div>
+    <div class="fg"><label class="lbl">Notes & éléments particuliers</label><textarea class="fta" id="fm-notes" placeholder="Partenariat, conditions particulières…"></textarea></div>
+    <input type="hidden" id="fm-id">
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn bg" style="flex:1" onclick="cM('form-modal')">Annuler</button>
+      <button class="btn bp" style="flex:1" onclick="saveFormateur()">Enregistrer →</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- DETAIL FORMATEUR -->
+<div class="mo" id="formd-modal"><div class="mdl">
+  <div class="mh">
+    <div class="mt" id="fd-title">—</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn bg bsm" id="fd-edit">Modifier</button>
+      <button class="btn bd bsm" id="fd-del">Supprimer</button>
+      <button class="mx" onclick="cM('formd-modal')">×</button>
+    </div>
+  </div>
+  <div class="mb" id="fd-body"></div>
+</div></div>
+
+<script>
+// ══════════════════════════════════════════════
+// QUALIOPI REF
+// ══════════════════════════════════════════════
+// nc: 'majeure' | 'mineure' | null
+// attendu: ce que l'auditeur vérifie
+// preuves: documents à présenter
+// erreurs: erreurs fréquentes
+// conseil: astuce pratique
+const QC=[
+  {id:1,c:1,nc:'mineure',t:"Information du public",
+   attendu:"Toutes les infos sont accessibles au public sur au moins un support : prérequis, objectifs, durée, modalités, délais d'accès, tarifs, contact, méthodes, évaluation, accessibilité handicap.",
+   preuves:["Fiche de présentation à jour","Page programme sur le site web","Plaquette ou catalogue","Mentions accessibilité PSH visibles"],
+   erreurs:["Site internet avec des infos obsolètes ou incomplètes","Absence de la mention accessibilité handicap","Tarifs ou délais d'accès non affichés"],
+   conseil:"Ajoutez l'année en cours sur chaque document et programmez un rappel annuel de mise à jour dans votre agenda — c'est la preuve d'actualisation que l'auditeur recherche.",
+   docs:["Fiche de présentation","Site internet","Plaquette / catalogue"]},
+
+  {id:2,c:1,nc:'mineure',t:"Indicateurs de résultats",
+   attendu:"Des résultats chiffrés accessibles au public : taux de satisfaction, taux de réussite, taux d'abandon, nombre de bénéficiaires. La période concernée et le nombre de bénéficiaires pris en compte doivent figurer.",
+   preuves:["Page 'Résultats' sur le site web","Taux de satisfaction avec date et échantillon","Taux d'abandon documenté"],
+   erreurs:["Chiffres non datés ou sans précision sur l'échantillon","Taux affichés sans mettre à jour après chaque bilan","Résultats cachés dans un document non public"],
+   conseil:"Mettez à jour vos taux après chaque bilan annuel. L'auditeur vérifiera que la période mentionnée est récente et que les chiffres sont accessibles sans clic supplémentaire.",
+   docs:["Taux satisfaction (site)","Taux abandon (site)","Bilan annuel chiffré"]},
+
+  {id:3,c:1,nc:'mineure',t:"Mise à jour des informations",
+   attendu:"Les informations sur les prestations sont exhaustives et régulièrement actualisées sur tous les supports de communication.",
+   preuves:["Historique de modifications du site","Documents versionnés avec date","Procédure de mise à jour documentée"],
+   erreurs:["Programmes non mis à jour d'une année sur l'autre","Dates de session périmées en ligne","Absence de procédure formalisée d'actualisation"],
+   conseil:"Créez une procédure simple (ex : revue trimestrielle) et conservez-en la trace. Un simple tableau Excel avec les dates de mise à jour suffit comme preuve.",
+   docs:["Fiche de présentation versionnée","Procédure de mise à jour","Programme à jour"]},
+
+  {id:4,c:2,nc:'majeure',t:"Analyse du besoin ⚠ MAJEURE",
+   attendu:"Analyse systématique des besoins du bénéficiaire ET du commanditaire avant chaque prestation. Inclut obligatoirement le recueil des besoins spécifiques liés au handicap (PSH).",
+   preuves:["Questionnaire de positionnement / évaluation des besoins rempli","Compte-rendu d'entretien préalable","Email ou fiche de recueil besoins commanditaire","Mention PSH dans le questionnaire"],
+   erreurs:["Questionnaire générique sans adaptation au profil","Besoins PSH non recueillis","Analyse faite après la formation","Aucune trace écrite de l'échange préalable"],
+   conseil:"Le questionnaire doit contenir une question explicite sur les besoins spécifiques liés au handicap. Sans cette mention, c'est une NC majeure assurée.",
+   docs:["Évaluation des besoins (signé)","CR entretien préalable","Questionnaire avec mention PSH"]},
+
+  {id:5,c:2,nc:'majeure',t:"Objectifs opérationnels ⚠ MAJEURE",
+   attendu:"Les objectifs de la formation sont définis, formulés avec des verbes d'action, mesurables et communiqués au bénéficiaire avant la formation.",
+   preuves:["Programme avec objectifs pédagogiques détaillés","Convention mentionnant les objectifs","Objectifs avec verbes d'action observables"],
+   erreurs:["Objectifs flous type 'comprendre les bases de…'","Objectifs non communiqués avant le démarrage","Convention sans mention des objectifs"],
+   conseil:"Utilisez des verbes d'action mesurables : 'être capable de produire', 'savoir rédiger', 'maîtriser la technique de…'. L'auditeur évalue si les objectifs sont ÉVALUABLES, pas seulement énoncés.",
+   docs:["Programme de formation","Convention de formation","Fiche pédagogique"]},
+
+  {id:6,c:2,nc:'majeure',t:"Contenus et modalités adaptés ⚠ MAJEURE",
+   attendu:"Les contenus, les modalités pédagogiques et les moyens sont adaptés aux objectifs définis et au profil des bénéficiaires (dont PSH).",
+   preuves:["Programme détaillé cohérent avec les objectifs","Déroulé pédagogique ou plan de séance","Preuves d'adaptation si public PSH","Modalités présentiel / distanciel documentées"],
+   erreurs:["Programme identique pour tous les profils sans justification","Aucune adaptation documentée pour PSH","Contenu sans lien évident avec les objectifs annoncés"],
+   conseil:"Si vous avez un apprenant PSH, conservez la trace de l'adaptation mise en place (même mineure). L'absence totale de preuve d'adaptation = NC majeure.",
+   docs:["Programme détaillé","Déroulé pédagogique","Document adaptation PSH"]},
+
+  {id:8,c:3,nc:'mineure',t:"Positionnement à l'entrée",
+   attendu:"Un processus formalisé d'évaluation des acquis à l'entrée ET à la sortie de la formation. Les résultats des tests de positionnement sont exploités pour adapter le parcours.",
+   preuves:["Test de positionnement avec résultats conservés","Grille d'évaluation des acquis entrée/sortie","Preuve d'exploitation des résultats (adaptation, personnalisation)"],
+   erreurs:["Test de positionnement existant mais résultats non exploités","Pas d'évaluation formalisée en fin de formation","Même parcours imposé à tous sans positionnement initial"],
+   conseil:"L'absence totale de procédure de positionnement est une NC majeure. Un simple questionnaire avec résultats archivés suffit — mais il faut prouver qu'il a servi à quelque chose.",
+   docs:["Test de positionnement rempli","Grille d'évaluation des acquis","Comparatif entrée/sortie"]},
+
+  {id:9,c:3,nc:'mineure',t:"Conditions de déroulement",
+   attendu:"Les bénéficiaires reçoivent avant la formation toutes les informations sur le déroulement : convocation, programme, règlement intérieur, contacts référents, modalités d'accès.",
+   preuves:["Convention de formation signée","Convocation ou programme envoyé avant J-7","Règlement intérieur transmis","Coordonnées référent pédagogique et handicap"],
+   erreurs:["Convention envoyée le jour même ou après","Règlement intérieur non transmis","Aucun référent handicap identifié dans les documents"],
+   conseil:"La convention doit être SIGNÉE et envoyée avant la formation. Conservez la preuve d'envoi (accusé de réception email). Identifiez nommément vos référents pédagogique, qualité et handicap.",
+   docs:["Convention signée","Convocation avec programme","Règlement intérieur","Contacts référents"]},
+
+  {id:11,c:3,nc:'majeure',t:"Évaluation des acquis ⚠ MAJEURE",
+   attendu:"Des outils d'évaluation permettent de mesurer l'acquisition des compétences tout au long de la formation et en fin de parcours.",
+   preuves:["Feuilles d'émargement signées","Questionnaire de satisfaction complété","Évaluation formateur remplie","Grille d'évaluation des acquis en fin de formation"],
+   erreurs:["Feuille d'émargement non signée ou incomplète","Questionnaire satisfaction non distribué","Aucune trace d'évaluation des compétences acquises","Évaluation formateur inexistante"],
+   conseil:"La feuille d'émargement doit être signée à chaque demi-journée. Une seule feuille non signée = preuve de formation non valide pour Qualiopi. Conservez les originaux.",
+   docs:["Feuilles émargement (toutes sessions)","Questionnaire satisfaction rempli","Évaluation des acquis","Évaluation formateur"]},
+
+  {id:17,c:4,nc:'mineure',t:"Moyens humains et techniques",
+   attendu:"Les moyens humains, matériels et techniques sont adaptés et suffisants pour délivrer les formations dans de bonnes conditions (locaux, équipements, outils).",
+   preuves:["CV des formateurs à jour","Descriptif des locaux ou contrat de location","Liste des équipements disponibles","Attestation accessibilité PMR si nécessaire"],
+   erreurs:["CV formateurs obsolètes ou incomplets","Aucune preuve de la disponibilité des locaux","Pas de liste des équipements pédagogiques","Accessibilité PMR non documentée"],
+   conseil:"Préparez un 'dossier lieu' avec photos, contrat et attestation d'accessibilité. Pour chaque formateur, assurez-vous que le CV est daté et couvre les thématiques enseignées.",
+   docs:["CV formateurs datés","Contrat / réservation lieu","Liste équipements","Attestation accessibilité"]},
+
+  {id:19,c:4,nc:'mineure',t:"Ressources pédagogiques",
+   attendu:"Des ressources pédagogiques sont disponibles, accessibles aux bénéficiaires et cohérentes avec les objectifs de la formation.",
+   preuves:["Support de formation transmis aux apprenants","Ressources complémentaires accessibles","Preuve de mise à disposition (email, LMS, clé USB)"],
+   erreurs:["Support envoyé mais non tracé","Ressources non actualisées","Aucune preuve que le stagiaire a bien reçu les supports"],
+   conseil:"Conservez la preuve d'envoi du support (email avec accusé, ou émargement d'une remise en main propre). L'auditeur demande souvent à voir un support d'exemple.",
+   docs:["Support de formation","Preuve d'envoi aux apprenants","Ressources complémentaires"]},
+
+  {id:21,c:5,nc:'majeure',t:"Compétences des formateurs ⚠ MAJEURE",
+   attendu:"Les compétences requises des formateurs/intervenants sont identifiées, vérifiées et documentées. Un processus de sélection existe.",
+   preuves:["CV à jour de chaque intervenant","NDA et SIRET des formateurs indépendants","Processus de sélection / grille d'évaluation","Entretiens professionnels ou CR d'échanges de pratiques"],
+   erreurs:["CV non mis à jour ou sans lien avec les formations","NDA / SIRET non vérifiés pour les sous-traitants","Absence totale de processus de sélection documenté","Aucune trace d'échanges pédagogiques entre intervenants"],
+   conseil:"Créez une fiche 'dossier formateur' standard (NDA, SIRET, CV, thématiques, date de dernière mise à jour). L'onglet Formateurs de cet outil est fait pour ça !",
+   docs:["CV datés et signés","NDA + SIRET vérifiés","Dossier formateur complet","CR réunion pédagogique"]},
+
+  {id:22,c:5,nc:'majeure',t:"Développement des compétences ⚠ MAJEURE",
+   attendu:"Un plan de développement des compétences de l'équipe est mis en place et les actions de formation de l'équipe sont tracées.",
+   preuves:["Plan de formation de l'équipe","Attestations de formation continue des formateurs","CR entretiens professionnels","Preuves de participation à des événements sectoriels"],
+   erreurs:["Aucun plan de formation interne","Pas de traçabilité des formations suivies par l'équipe","Entretiens professionnels non réalisés ou non documentés"],
+   conseil:"Même une simple participation à un webinaire compte comme preuve si elle est tracée. Conservez les attestations de présence et créez un tableau de suivi des formations de l'équipe.",
+   docs:["Plan de développement compétences","Attestations formations suivies","CR entretiens professionnels"]},
+
+  {id:23,c:6,nc:'mineure',t:"Veille légale et réglementaire",
+   attendu:"Une veille sur les évolutions légales et réglementaires du secteur de la formation est mise en place et exploitée.",
+   preuves:["Abonnements à des newsletters spécialisées","Notes de veille ou résumés","Preuves de mise à jour des pratiques suite à la veille"],
+   erreurs:["Aucune preuve de veille documentée","Veille informelle non tracée","Pas de lien entre la veille et les mises à jour internes"],
+   conseil:"Un simple dossier 'Veille réglementaire' avec les emails ou articles sauvegardés suffit. L'important est d'avoir une TRACE et de pouvoir montrer que ça a eu un impact sur votre pratique.",
+   docs:["Dossier de veille","Abonnements newsletters","Notes de mise à jour internes"]},
+
+  {id:26,c:6,nc:'mineure',t:"Accompagnement handicap (PSH)",
+   attendu:"Un référent handicap est identifié. Des partenariats avec des structures spécialisées existent pour accompagner les bénéficiaires en situation de handicap.",
+   preuves:["Nom du référent handicap visible sur tous les supports","Partenariat avec Cap Emploi, AGEFIPH ou autre structure","Procédure d'accueil PSH documentée"],
+   erreurs:["Référent handicap non nommé dans les documents","Aucun partenariat identifié","Mention PSH générique sans procédure concrète"],
+   conseil:"Nommez explicitement votre référent handicap sur la fiche de présentation et le site. Même sans PSH dans vos formations, la procédure doit exister. Un email de contact avec une association locale suffit comme début de partenariat.",
+   docs:["Nom référent handicap sur supports","Accord partenariat PSH","Procédure accueil PSH"]},
+
+  {id:30,c:7,nc:'majeure',t:"Recueil des appréciations ⚠ MAJEURE",
+   attendu:"Les appréciations des bénéficiaires, des financeurs ET des formateurs sont recueillies après chaque prestation. Le recueil des financeurs est exigé a minima une fois par an (V9 jan. 2024).",
+   preuves:["Questionnaire satisfaction à chaud (bénéficiaires)","Questionnaire à froid J+90 (bénéficiaires)","Questionnaire à froid entreprise (si IAE/IEE)","Questionnaire à froid financeur (1×/an min.)","Questionnaire formateur","Taux de retour documenté"],
+   erreurs:["Questionnaires distribués mais résultats non analysés","Questionnaire financeur jamais envoyé","Taux de retour trop faible sans action de relance","Questionnaire à froid oublié (J+90)"],
+   conseil:"La V9 (jan. 2024) assouplit l'obligation financeur : 1 fois/an suffit, y compris via participation à un webinaire du financeur. Mais les questionnaires bénéficiaires restent obligatoires après CHAQUE formation.",
+   docs:["Q. satisfaction à chaud","Q. à froid bénéficiaire (J+90)","Q. à froid entreprise","Q. à froid financeur","Q. formateur","Synthèse annuelle"]},
+
+  {id:31,c:7,nc:'mineure',t:"Traitement des réclamations",
+   attendu:"Une procédure formalisée de traitement des réclamations existe. Les réclamations reçues et les suites données sont tracées.",
+   preuves:["Procédure de traitement des réclamations écrite","Registre des réclamations (même vide)","Preuves de réponses apportées aux réclamations"],
+   erreurs:["Aucune procédure formalisée","Réclamations traitées oralement sans trace écrite","Pas de registre même si aucune réclamation reçue"],
+   conseil:"Même sans réclamation reçue, le registre doit exister et être daté. Une simple feuille 'Registre des réclamations — néant à ce jour' avec votre signature suffit.",
+   docs:["Procédure réclamations","Registre des réclamations","Preuves de réponses apportées"]},
+
+  {id:32,c:7,nc:'majeure',t:"Amélioration continue ⚠ MAJEURE",
+   attendu:"Les résultats des évaluations sont analysés et donnent lieu à des actions d'amélioration documentées. Un bilan annuel est réalisé.",
+   preuves:["Bilan annuel avec analyse des indicateurs","Plan d'amélioration continue","Actions correctives documentées suite aux réclamations","CR de revue de direction ou réunion qualité"],
+   erreurs:["Questionnaires collectés mais jamais analysés","Bilan annuel inexistant","Aucune action corrective tracée suite aux retours négatifs","Amélioration continue déclarative sans preuve"],
+   conseil:"L'auditeur cherche la BOUCLE complète : collecte → analyse → action → vérification. Un simple tableau 'constats / actions / résultats' tenu à jour annuellement constitue une preuve solide.",
+   docs:["Bilan annuel qualité","Plan d'amélioration continue","Actions correctives documentées","CR revue de direction"]},
+];
+
+// ══════════════════════════════════════════════
+// PÉRIODES TÂCHES
+// ══════════════════════════════════════════════
+const PF=[
+  {id:'avant3m',label:'Dans les 3 mois précédents',icon:'📋',color:'#a78bfa',tasks:[
+    {name:"Fiche de présentation créée / actualisée",doc:"Fiche de présentation",q:[1,3,5],crit:true,off:-84},
+    {name:"Mise à jour site internet",doc:"Site internet",q:[1,3],crit:true,off:-84},
+    {name:"Créer l'événement Facebook",doc:"Event Facebook",q:[1],crit:false,off:-84},
+    {name:"Créer l'événement LinkedIn",doc:"Event LinkedIn",q:[1],crit:false,off:-84},
+    {name:"Diffusion partenaires",doc:"Email partenaires",q:[1],crit:false,off:-84},
+    {name:"Publication RS — lancement",doc:"Posts RS",q:[1,2],crit:false,off:-56},
+  ]},
+  {id:'avant1s',label:'1 semaine avant',icon:'📅',color:'var(--f)',tasks:[
+    {name:"Envoyer évaluation des besoins",doc:"Évaluation des besoins",q:[4,8],crit:true,off:-7},
+    {name:"Envoyer devis aux apprenants",doc:"Devis",q:[],crit:false,off:-7},
+    {name:"Envoyer convention de formation",doc:"Convention",q:[5,9],crit:true,off:-7},
+    {name:"Relance RS + partenaires",doc:"Posts RS relance",q:[1],crit:false,off:-14},
+    {name:"Préparer support de formation",doc:"Support de formation",q:[6,19],crit:false,off:-14},
+  ]},
+  {id:'pendant',label:'Pendant la formation',icon:'🎓',color:'var(--wa)',tasks:[
+    {name:"Faire signer la feuille de présence",doc:"Feuille de présence",q:[9,11],crit:true,off:0},
+    {name:"Accord droit à l'image (si diffusion photos)",doc:"Accord droit à l'image",q:[9],crit:false,off:0},
+    {name:"Suivi des apprenants en cours",doc:"Suivi des apprenants",q:[11],crit:true,off:0},
+    {name:"Faire remplir questionnaire de satisfaction",doc:"Questionnaire de satisfaction",q:[30],crit:true,off:0},
+  ]},
+  {id:'apres1s',label:'1 semaine après',icon:'✅',color:'var(--ok)',tasks:[
+    {name:"Envoyer évaluation des acquis",doc:"Évaluation des acquis",q:[8,11],crit:true,off:7},
+    {name:"Compléter évaluation formateur",doc:"Évaluation formateur",q:[11,21],crit:true,off:7},
+    {name:"Envoyer attestation de réalisation",doc:"Attestation de réalisation",q:[9],crit:true,off:7},
+    {name:"Envoyer facture / suivre paiement",doc:"Facture / Paiement",q:[],crit:false,off:7},
+    {name:"Envoyer support de formation",doc:"Support de formation",q:[19],crit:false,off:3},
+  ]},
+  {id:'apres3m',label:'3 à 6 mois après',icon:'🔁',color:'#22d3ee',tasks:[
+    {name:"Questionnaire à froid : apprenant",doc:"Q. à froid — apprenant",q:[30,32],crit:true,off:90},
+    {name:"Questionnaire à froid : entreprise",doc:"Q. à froid — entreprise",q:[30,32],crit:false,off:90},
+    {name:"Questionnaire à froid : financeur",doc:"Q. à froid — financeur",q:[30,32],crit:false,off:90},
+    {name:"Questionnaire à froid : formateur",doc:"Q. à froid — formateur",q:[30,32],crit:false,off:90},
+    {name:"Mettre à jour taux satisfaction sur le site",doc:"Site internet",q:[2,30],crit:true,off:120},
+  ]},
+];
+const PI=[{id:'cadrage',label:'Cadrage client',icon:'🤝',color:'#f472b6',tasks:[
+  {name:"Réunion de cadrage avec le client",doc:"CR cadrage",q:[4,5],crit:true,off:-112},
+  {name:"Envoyer devis / proposition commerciale",doc:"Devis",q:[],crit:true,off:-98},
+  {name:"Réception accord client",doc:"Bon de commande",q:[],crit:true,off:-84},
+]}];
+const PA=[
+  {id:'org',label:'Organisation',icon:'🔎',color:'#a78bfa',tasks:[
+    {name:"Valider l'événement (go/no go)",doc:"—",q:[],crit:false,off:-70},
+    {name:"Réserver le lieu",doc:"Réservation lieu",q:[],crit:false,off:-56},
+    {name:"Préparer le contenu / support",doc:"Support atelier",q:[],crit:false,off:-14},
+  ]},
+  {id:'com',label:'Communication',icon:'📢',color:'var(--f)',tasks:[
+    {name:"Mettre les infos sur le site",doc:"Site internet",q:[],crit:false,off:-56},
+    {name:"Créer l'événement Facebook",doc:"Event Facebook",q:[],crit:false,off:-56},
+    {name:"Diffusion partenaires",doc:"Email partenaires",q:[],crit:false,off:-56},
+    {name:"Publication RS — lancement",doc:"Posts RS",q:[],crit:false,off:-42},
+    {name:"Relance RS (J-14)",doc:"Posts RS relance",q:[],crit:false,off:-14},
+  ]},
+  {id:'j',label:'Jour J',icon:'📅',color:'var(--wa)',tasks:[
+    {name:"Feuille d'émargement",doc:"Fiche de présence",q:[],crit:false,off:0},
+    {name:"Recueil satisfaction",doc:"Fiche de satisfaction",q:[],crit:false,off:0},
+  ]},
+  {id:'post',label:'Post-atelier',icon:'✅',color:'var(--ok)',tasks:[
+    {name:"Publication retour d'expérience RS",doc:"Posts RS",q:[],crit:false,off:3},
+    {name:"Facturation (si payant)",doc:"Facture",q:[],crit:false,off:7},
+  ]},
+];
+
+function mkEvTasks(type,sous,sess1,modalite){
+  const s=new Date(sess1);
+  const mk=(period,t)=>{const dl=new Date(s);dl.setDate(dl.getDate()+t.off);return{period:period.id,phase:`${period.icon} ${period.label}`,phaseColor:period.color,name:t.name,doc:t.doc,qualiopi:t.q,critical:t.crit,deadline:dl,done:false};};
+  if(type==='atelier')return PA.flatMap(p=>p.tasks.map(t=>mk(p,t))).map((t,i)=>({...t,id:i}));
+  const ps=[...PF];if(sous==='intra')ps.unshift(...PI);
+  const tasks=ps.flatMap(p=>p.tasks.map(t=>mk(p,t))).map((t,i)=>({...t,id:i}));
+  // Tâche distanciel automatique si visio ou hybride
+  if(modalite==='distanciel'||modalite==='hybride'){
+    const dlVisio=new Date(s);dlVisio.setDate(dlVisio.getDate()-14);
+    tasks.push({
+      id:tasks.length,
+      period:'avant1s',phase:'📅 1 semaine avant',phaseColor:'var(--f)',
+      name:"Préparer procédure de gestion des aléas techniques (visio)",
+      doc:"Procédure aléas techniques — obligatoire Qualiopi",
+      qualiopi:[6],critical:true,deadline:dlVisio,done:false,
+      visioTag:true
+    });
+  }
+  return tasks;
+}
+
+function mkInsTasks(sess1){
+  const s=new Date(sess1);
+  const T=(nm,off,doc,crit)=>{const dl=new Date(s);dl.setDate(dl.getDate()+off);return{name:nm,doc,critical:crit,deadline:dl,done:false};};
+  return[
+    T("Envoyer le devis",-28,"Devis",false),
+    T("Recevoir le devis signé",-21,"Devis signé",true),
+    T("Envoyer évaluation des besoins",-14,"Évaluation des besoins",true),
+    T("Recevoir évaluation des besoins remplie",-7,"Évaluation remplie",true),
+    T("Envoyer la convention de formation",-14,"Convention de formation",true),
+    T("Recevoir la convention signée",-7,"Convention signée",true),
+    T("Envoyer accord droit à l'image",-7,"Accord droit à l'image",false),
+    T("Recevoir accord droit à l'image signé",-3,"Accord DI signé",false),
+    T("Envoyer le programme détaillé",-7,"Programme de formation",false),
+    T("Envoyer la facture / suivre paiement",7,"Facture / Paiement",false),
+    T("Recevoir le paiement",14,"Paiement reçu",false),
+    T("Envoyer l'attestation de réalisation",7,"Attestation",true),
+    T("Envoyer le support de formation",3,"Support de formation",false),
+    T("Envoyer questionnaire à froid (J+90)",90,"Q. à froid — apprenant",true),
+    T("Recevoir questionnaire à froid rempli",97,"Q. à froid rempli",false),
+  ].map((t,i)=>({...t,id:i}));
+}
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let evs=[];
+let fmts=[];
+let sType='formation',sSous='inter',sHandi='non',sMod_='presentiel',sBPF_=true;
+let cF='all',cCF='all';
+let calY=new Date().getFullYear(),calM=new Date().getMonth();
+let curEv=null,curIns=null,curDTab='tasks',curFmt=null;
+
+// ══════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════
+const MN=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const DY=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+function fd(d){if(!d)return'';return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});}
+function dTo(d){const n=new Date();n.setHours(0,0,0,0);const dt=new Date(d);dt.setHours(0,0,0,0);return Math.round((dt-n)/86400000);}
+function ds(d,done){if(done)return'dn';const x=dTo(d);if(x<0||x<=7)return'da';if(x<=21)return'wa';return'ok';}
+function dl(d,done){if(done)return'Fait ✓';const x=dTo(d);if(x<0)return`En retard (${Math.abs(x)}j)`;if(x===0)return"Aujourd'hui";if(x<=7)return`Dans ${x}j`;return fd(d);}
+function ini(n){return(n||'?').split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'?';}
+function allTasks(ev){return[...(ev.tasks||[]),...(ev.inscrits||[]).flatMap(i=>i.tasks||[])];}
+function weekRange(){
+  const n=new Date();n.setHours(0,0,0,0);
+  const end=new Date(n);end.setDate(n.getDate()+7);
+  return{start:n,end};
+}
+
+// ══════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════
+function rStats(){
+  let urg=0,soon=0,done=0,week=0;
+  const {start,end}=weekRange();
+  evs.forEach(ev=>allTasks(ev).forEach(t=>{
+    if(t.done){done++;return;}
+    const d=dTo(t.deadline);
+    if(d<=7)urg++;else if(d<=21)soon++;
+    const td=new Date(t.deadline);td.setHours(0,0,0,0);
+    if(td>=start&&td<end)week++;
+  }));
+  const ni=evs.reduce((a,e)=>a+(e.inscrits||[]).length,0);
+  document.getElementById('sbar').innerHTML=`
+    <div class="sc c1"><div class="sn">${evs.length}</div><div class="sl">Événements</div></div>
+    <div class="sc c2"><div class="sn" style="color:var(--da)">${urg}</div><div class="sl">Tâches urgentes</div></div>
+    <div class="sc c3"><div class="sn" style="color:var(--wa)">${soon}</div><div class="sl">À venir (21j)</div></div>
+    <div class="sc c4"><div class="sn" style="color:var(--ok)">${done}</div><div class="sl">Faites · ${ni} inscrit${ni!==1?'s':''}</div></div>
+    <div class="sc c5"><div class="sn" style="color:#d8b4fe">${fmts.length}</div><div class="sl">Formateurs</div></div>`;
+}
+
+// ══════════════════════════════════════════════
+// À FAIRE CETTE SEMAINE
+// ══════════════════════════════════════════════
+function rWeek(){
+  const {start,end}=weekRange();
+  const endLabel=new Date(end);endLabel.setDate(endLabel.getDate()-1);
+  document.getElementById('week-range').textContent=`${fd(start)} → ${fd(endLabel)}`;
+
+  const items=[];
+  evs.forEach(ev=>{
+    (ev.tasks||[]).forEach(t=>{
+      if(t.done)return;
+      const td=new Date(t.deadline);td.setHours(0,0,0,0);
+      if(td>=start&&td<end)items.push({evId:ev.id,insId:null,ev,t,isIns:false});
+    });
+    (ev.inscrits||[]).forEach(ins=>{
+      (ins.tasks||[]).forEach(t=>{
+        if(t.done)return;
+        const td=new Date(t.deadline);td.setHours(0,0,0,0);
+        if(td>=start&&td<end)items.push({evId:ev.id,insId:ins.id,ev,ins,t,isIns:true});
+      });
+    });
+  });
+
+  items.sort((a,b)=>new Date(a.t.deadline)-new Date(b.t.deadline));
+  const count=items.length;
+  document.getElementById('week-count').textContent=count;
+
+  if(!count){
+    document.getElementById('week-body').innerHTML=`<div class="week-empty">✨ Aucune tâche cette semaine — vous êtes à jour !</div>`;
+    return;
+  }
+
+  document.getElementById('week-body').innerHTML=items.map(item=>{
+    const s=ds(item.t.deadline,false);
+    const x=dTo(item.t.deadline);
+    const ddlClass=x<0?'od':s;
+    const insLabel=item.isIns?`${item.ins.prenom} ${item.ins.nom}`:'';
+    const chkId=item.isIns?`w-ins-${item.evId}-${item.insId}-${item.t.id}`:`w-ev-${item.evId}-${item.t.id}`;
+    return`<div class="week-row" id="${chkId}-row">
+      <div class="week-chk" id="${chkId}-chk" onclick="togWeek('${item.evId}','${item.insId||''}',${item.t.id},${item.isIns},'${chkId}')"></div>
+      <div class="week-ev ${item.ev.type==='atelier'?'at-ev':''}">${item.ev.name}</div>
+      ${item.isIns?`<div class="week-ins">👤 ${insLabel}</div>`:'<div class="week-ins" style="color:transparent">—</div>'}
+      <div class="week-task">${item.t.critical?'⚑ ':''}<b>${item.t.name}</b> <span style="font-size:11px;color:var(--mu);font-weight:400">· ${item.t.doc}</span></div>
+      <div class="week-ddl ${ddlClass}">${dl(item.t.deadline,false)}</div>
+    </div>`;
+  }).join('');
+}
+
+function togWeek(evId,insId,tid,isIns,chkId){
+  const ev=evs.find(e=>e.id===evId);if(!ev)return;
+  let t;
+  if(isIns){
+    const ins=(ev.inscrits||[]).find(i=>i.id===insId);if(!ins)return;
+    t=ins.tasks.find(t=>t.id===tid);
+  } else {
+    t=ev.tasks.find(t=>t.id===tid);
+  }
+  if(!t)return;
+  t.done=true;save();
+  // animate out
+  const row=document.getElementById(`${chkId}-row`);
+  const chk=document.getElementById(`${chkId}-chk`);
+  if(chk){chk.classList.add('ck');chk.textContent='✓';}
+  if(row){row.style.opacity='0.4';row.style.pointerEvents='none';}
+  setTimeout(()=>rAll(),600);
+}
+
+// ══════════════════════════════════════════════
+// EVENTS GRID
+// ══════════════════════════════════════════════
+function rEvents(){
+  const g=document.getElementById('egrid');
+  let list=[...evs];
+  if(cF==='formation')list=list.filter(e=>e.type==='formation');
+  else if(cF==='atelier')list=list.filter(e=>e.type==='atelier');
+  else if(cF==='urgent')list=list.filter(e=>allTasks(e).some(t=>!t.done&&dTo(t.deadline)<=7));
+  else if(cF==='upcoming')list=list.filter(e=>dTo(e.sessions[0])>=0);
+  if(!list.length){g.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="ei">📅</div><h3>Aucun événement</h3><p>Ajoutez votre première formation ou atelier pour démarrer.</p></div>`;return;}
+  g.innerHTML=list.map(ev=>{
+    const tasks=ev.tasks||[];
+    const done=tasks.filter(t=>t.done).length;
+    const pct=tasks.length?Math.round(done/tasks.length*100):0;
+    const urg=allTasks(ev).filter(t=>!t.done&&dTo(t.deadline)<=7).length;
+    const next=tasks.filter(t=>!t.done).sort((a,b)=>new Date(a.deadline)-new Date(b.deadline)).slice(0,3);
+    const ni=(ev.inscrits||[]).length;
+    const lbl=ev.type==='formation'?(ev.sousType==='intra'?'🏢 Intra':'👥 Inter'):'💡 Atelier';
+    const modIco={presentiel:'🏛',distanciel:'💻',hybride:'🔀'}[ev.modalite||'presentiel']||'';
+    const dsp=ev.sessions.length>1?ev.sessions.map((s,i)=>`S${i+1}: ${fd(s)}`).join(' · '):`📅 ${fd(ev.sessions[0])}`;
+    return`<div class="ecard ${ev.type==='atelier'?'at':''}" onclick="oDetail('${ev.id}')">
+      <div class="ech">
+        <div>
+          <div class="etn">${ev.name}${ni>0?`<span class="ibdg">👥 ${ni}</span>`:''}</div>
+          <div class="em">📍 ${ev.lieu||'—'} · ${dsp}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
+          <div class="badge ${ev.type==='atelier'?'ba':'bf'}">${lbl}</div>
+          ${ev.modalite&&ev.modalite!=='presentiel'?`<div class="badge" style="background:rgba(34,197,94,.15);color:#86efac">${modIco} ${ev.modalite}</div>`:''}
+        </div>
+      </div>
+      <div class="ecb">
+        ${urg>0?`<div style="font-size:11px;color:var(--da);font-weight:600;margin-bottom:6px">⚠ ${urg} tâche${urg>1?'s':''} urgente${urg>1?'s':''}</div>`:''}
+        ${next.map(t=>`<div class="tmini"><div class="dot ${ds(t.deadline,t.done)}"></div><div style="flex:1;font-size:12px">${t.name}</div><div style="font-size:11px;color:var(--mu)">${dl(t.deadline,t.done)}</div></div>`).join('')}
+        ${!next.length?`<div style="font-size:12px;color:var(--ok);text-align:center;padding:8px">✓ Toutes les tâches sont faites !</div>`:''}
+      </div>
+      <div class="ecf"><div class="pb"><div class="pf" style="width:${pct}%"></div></div><div class="pct">${done}/${tasks.length}</div></div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// CALENDAR
+// ══════════════════════════════════════════════
+function rCal(){
+  document.getElementById('cml').textContent=`${MN[calM]} ${calY}`;
+  let html=DY.map(d=>`<div class="cdh">${d}</div>`).join('');
+  const first=new Date(calY,calM,1);
+  let dow=first.getDay();dow=dow===0?6:dow-1;
+  const tot=new Date(calY,calM+1,0).getDate();
+  const today=new Date();today.setHours(0,0,0,0);
+  for(let i=0;i<dow;i++)html+=`<div class="cd oth"></div>`;
+  for(let day=1;day<=tot;day++){
+    const isT=new Date(calY,calM,day).getTime()===today.getTime();
+    let inner='';
+    if(cCF!=='tasks')evs.filter(ev=>{if(cCF==='formation'&&ev.type!=='formation')return false;if(cCF==='atelier'&&ev.type!=='atelier')return false;return true;})
+      .forEach(ev=>(ev.sessions||[]).forEach(s=>{
+        const sd=new Date(s);
+        if(sd.getFullYear()===calY&&sd.getMonth()===calM&&sd.getDate()===day)
+          inner+=`<div class="cev ${ev.type==='atelier'?'at':'fo'}" title="${ev.name}">🎓 ${ev.name}</div>`;
+      }));
+    if(cCF!=='events')evs.forEach(ev=>{
+      if(cCF==='formation'&&ev.type!=='formation')return;
+      if(cCF==='atelier'&&ev.type!=='atelier')return;
+      (ev.tasks||[]).filter(t=>{const td=new Date(t.deadline);return td.getFullYear()===calY&&td.getMonth()===calM&&td.getDate()===day&&!t.done;})
+        .forEach(t=>inner+=`<div class="ctk ${ds(t.deadline,false)}" title="${ev.name}: ${t.name}">· ${t.name.substring(0,18)}</div>`);
+    });
+    html+=`<div class="cd${isT?' tod':''}"><div class="cdn">${day}</div>${inner}</div>`;
+  }
+  const tr=(dow+tot)%7;if(tr)for(let i=0;i<7-tr;i++)html+=`<div class="cd oth"></div>`;
+  document.getElementById('cgrid').innerHTML=html;
+}
+
+// ══════════════════════════════════════════════
+// QUALIOPI RÉFÉRENTIEL
+// ══════════════════════════════════════════════
+const CRITERES={
+  1:{label:"Critère 1 — Information du public",desc:"Les informations communiquées aux futurs stagiaires et financeurs sont claires, complètes et accessibles.",erreurs:"Site obsolète · Taux satisfaction absents · Programmes incomplets"},
+  2:{label:"Critère 2 — Objectifs et adaptation",desc:"La conception pédagogique est adaptée aux besoins des bénéficiaires, les objectifs sont mesurables.",erreurs:"Objectifs flous · Pas de positionnement initial · Programme identique pour tous"},
+  3:{label:"Critère 3 — Accueil, suivi et évaluation",desc:"Des dispositifs d'accueil, de suivi et d'évaluation adaptés sont mis en place tout au long du parcours.",erreurs:"Pas de livret d'accueil · Feuilles émargement incomplètes · Aucun suivi individualisé"},
+  4:{label:"Critère 4 — Moyens pédagogiques et techniques",desc:"Les ressources humaines, matérielles et pédagogiques sont suffisantes et adaptées.",erreurs:"CV formateurs non à jour · Ressources périmées · Conditions matérielles inadaptées"},
+  5:{label:"Critère 5 — Qualification des personnels",desc:"La compétence de l'équipe pédagogique est garantie et son développement est continu.",erreurs:"CV non mis à jour · Pas de plan de compétences · Aucune traçabilité des formations"},
+  6:{label:"Critère 6 — Environnement professionnel",desc:"L'organisme reste connecté à son écosystème et maintient une veille active.",erreurs:"Aucune veille documentée · Sous-traitance non formalisée · Pas de réseau identifié"},
+  7:{label:"Critère 7 — Appréciations et réclamations",desc:"Les retours sont collectés, analysés et exploités pour améliorer les prestations.",erreurs:"Questionnaires non analysés · Aucune procédure réclamations · Amélioration continue non documentée"},
+};
+
+let qFilter='all';
+function rQ(){
+  const gr={};
+  QC.filter(q=>qFilter==='all'||(qFilter==='maj'&&q.nc==='majeure')||(qFilter==='min'&&q.nc==='mineure'))
+    .forEach(q=>{if(!gr[q.c])gr[q.c]=[];gr[q.c].push(q);});
+
+  const majCount=QC.filter(q=>q.nc==='majeure').length;
+  const minCount=QC.filter(q=>q.nc==='mineure').length;
+
+  let html=`<div class="audit-banner">
+    <div class="audit-stat"><div class="audit-n">${QC.length}</div><div class="audit-l">Indicateurs suivis</div></div>
+    <div class="audit-stat"><div class="audit-n" style="color:#fca5a5">${majCount}</div><div class="audit-l">NC potentiellement majeures</div></div>
+    <div class="audit-stat"><div class="audit-n" style="color:#fcd34d">${minCount}</div><div class="audit-l">NC potentiellement mineures</div></div>
+    <div class="audit-stat"><div class="audit-n" style="color:var(--mu);font-size:14px;margin-top:6px">3 ans</div><div class="audit-l">Durée certification</div></div>
+    <div class="audit-stat"><div class="audit-n" style="color:var(--mu);font-size:14px;margin-top:6px">18 mois</div><div class="audit-l">Audit de surveillance</div></div>
+  </div>
+  <div class="frow" style="margin-bottom:20px">
+    <span class="flbl">Filtrer :</span>
+    <button class="fb${qFilter==='all'?' on':''}" onclick="setQF('all',this)">Tous les indicateurs</button>
+    <button class="fb${qFilter==='maj'?' on':''}" onclick="setQF('maj',this)" style="${qFilter==='maj'?'':''}">⚠ NC majeures</button>
+    <button class="fb${qFilter==='min'?' on':''}" onclick="setQF('min',this)">NC mineures</button>
+  </div>`;
+
+  if(!Object.keys(gr).length){
+    html+=`<div class="empty"><div class="ei">🎖</div><h3>Aucun indicateur pour ce filtre</h3></div>`;
+    document.getElementById('qgrid').innerHTML=html;return;
+  }
+
+  Object.keys(gr).sort((a,b)=>a-b).forEach(c=>{
+    const cr=CRITERES[c]||{label:'Critère '+c,desc:'',erreurs:''};
+    html+=`<div class="qcrit-hdr">
+      <div>
+        <div class="qcrit-title">${cr.label}</div>
+        <div class="qcrit-desc">${cr.desc}</div>
+        ${cr.erreurs?`<div class="qcrit-erreurs">⚠ Erreurs fréquentes : ${cr.erreurs}</div>`:''}
+      </div>
+    </div>`;
+    gr[c].forEach(q=>{
+      const ncClass=q.nc==='majeure'?'nc-maj':q.nc==='mineure'?'nc-min':'';
+      const ncBadge=q.nc==='majeure'?`<span class="qnc-badge maj">⚠ NC Majeure potentielle</span>`:q.nc==='mineure'?`<span class="qnc-badge min">NC Mineure potentielle</span>`:'';
+      html+=`<div class="qcard ${ncClass}" id="qc-${q.id}">
+        <div class="qcard-hdr" onclick="togQ(${q.id})">
+          <div class="qnum">#${q.id}</div>
+          <div class="qhead-info">
+            <div class="qt">${q.t}</div>
+            ${ncBadge}
+          </div>
+          <div class="qcard-chevron" id="qchev-${q.id}">▼</div>
+        </div>
+        <div class="qcard-body" id="qbody-${q.id}">
+          <div class="qsec">
+            <div class="qsec-title">Ce que l'auditeur vérifie</div>
+            <div class="qattend">${q.attendu}</div>
+          </div>
+          <div class="qsec">
+            <div class="qsec-title">Preuves à présenter</div>
+            <div class="qproof-list">${q.preuves.map(p=>`<div class="qproof"><span>📄</span><span>${p}</span></div>`).join('')}</div>
+          </div>
+          <div class="qsec">
+            <div class="qsec-title">Erreurs fréquentes à éviter</div>
+            <div class="qerr-list">${q.erreurs.map(e=>`<div class="qerr"><span>✗</span><span>${e}</span></div>`).join('')}</div>
+          </div>
+          <div class="qsec">
+            <div class="qsec-title">💡 Conseil pratique</div>
+            <div class="qconseil">${q.conseil}</div>
+          </div>
+          <div class="qsec" style="margin-bottom:0">
+            <div class="qsec-title">Documents clés</div>
+            <div class="qdocs">${q.docs.map(d=>`<span class="qdoc">📎 ${d}</span>`).join('')}</div>
+          </div>
+        </div>
+      </div>`;
+    });
+  });
+
+  document.getElementById('qgrid').innerHTML=html;
+}
+
+function togQ(id){
+  const body=document.getElementById(`qbody-${id}`);
+  const chev=document.getElementById(`qchev-${id}`);
+  if(!body)return;
+  const isOpen=body.classList.contains('open');
+  body.classList.toggle('open',!isOpen);
+  if(chev)chev.classList.toggle('open',!isOpen);
+}
+
+function setQF(f,btn){
+  qFilter=f;
+  document.querySelectorAll('#vw-qualiopi .fb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  rQ();
+}
+
+// ══════════════════════════════════════════════
+// FORMATEURS
+// ══════════════════════════════════════════════
+function rFormateurs(){
+  const g=document.getElementById('form-grid');
+  // update selector in add event modal
+  const sel=document.getElementById('in-form-sel');
+  if(sel){
+    const cur=sel.value;
+    sel.innerHTML='<option value="">— Sélectionner un formateur —</option>';
+    fmts.forEach(f=>sel.innerHTML+=`<option value="${f.id}" ${f.id===cur?'selected':''}>${f.prenom} ${f.nom}</option>`);
+  }
+  if(!fmts.length){g.innerHTML=`<div class="empty"><div class="ei">👤</div><h3>Aucun formateur</h3><p>Ajoutez vos formateurs et sous-traitants pour les lier à vos formations.</p></div>`;return;}
+  g.innerHTML=fmts.map(f=>{
+    const sessions=evs.filter(e=>e.formateurId===f.id).length;
+    const specs=(f.spec||'').split(',').map(s=>s.trim()).filter(Boolean);
+    return`<div class="fcard" onclick="oFmtDetail('${f.id}')">
+      <div class="fcard-hdr">
+        <div class="fav" style="background:linear-gradient(135deg,#a78bfa,var(--f))">${ini(`${f.prenom} ${f.nom}`)}</div>
+        <div>
+          <div class="fcard-name">${f.prenom} ${f.nom}</div>
+          <div class="fcard-sub">${f.email||''}</div>
+        </div>
+      </div>
+      ${specs.length?`<div class="fcard-tags">${specs.map(s=>`<span class="ftag">${s}</span>`).join('')}</div>`:''}
+      <div class="fcard-stats">
+        <div class="fstat"><div class="fstat-n">${sessions}</div><div class="fstat-l">Sessions</div></div>
+        ${f.nda?`<div class="fstat"><div class="fstat-n" style="font-size:14px;margin-top:5px">${f.nda.slice(-6)}</div><div class="fstat-l">NDA</div></div>`:''}
+        <div class="fstat"><div class="fstat-n" style="font-size:14px;margin-top:5px">${f.pref||'email'}</div><div class="fstat-l">Contact préféré</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function oFmtDetail(id){
+  curFmt=id;
+  const f=fmts.find(x=>x.id===id);if(!f)return;
+  document.getElementById('fd-title').textContent=`${f.prenom} ${f.nom}`;
+  document.getElementById('fd-edit').onclick=()=>editFmt(id);
+  document.getElementById('fd-del').onclick=()=>delFmt(id);
+  const sessions=evs.filter(e=>e.formateurId===id);
+  let html=`<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--brd)">
+    <div class="av" style="width:56px;height:56px;font-size:22px;background:linear-gradient(135deg,#a78bfa,var(--f))">${ini(`${f.prenom} ${f.nom}`)}</div>
+    <div>
+      <div style="font-family:'DM Serif Display',serif;font-size:22px">${f.prenom} ${f.nom}</div>
+      <div style="font-size:13px;color:var(--mu);margin-top:3px">${[f.email,f.tel].filter(Boolean).join(' · ')||'Aucune coordonnée renseignée'}</div>
+    </div>
+  </div>`;
+  // Info grid
+  const fields=[
+    {l:'NDA',v:f.nda},{l:'SIRET',v:f.siret},{l:'Spécialités',v:f.spec},
+    {l:'Préférence contact',v:f.pref},{l:'Chemin dossier',v:f.path}
+  ].filter(x=>x.v);
+  if(fields.length){
+    html+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px;">`;
+    fields.forEach(x=>html+=`<div style="background:var(--sur2);border-radius:8px;padding:10px 13px"><div style="font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">${x.l}</div><div style="font-size:13px;font-weight:500">${x.v}</div></div>`);
+    html+=`</div>`;
+  }
+  if(f.notes)html+=`<div style="background:var(--sur2);border-radius:9px;padding:12px;margin-bottom:16px;font-size:13px;color:var(--mu);border-left:3px solid var(--f)">${f.notes}</div>`;
+  // Sessions assignées
+  html+=`<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--mu);margin-bottom:10px">Sessions assignées (${sessions.length})</div>`;
+  if(!sessions.length)html+=`<div style="font-size:13px;color:var(--mu)">Aucune session assignée à ce formateur.</div>`;
+  else html+=sessions.map(ev=>`<div class="trow" style="cursor:pointer" onclick="cM('formd-modal');oDetail('${ev.id}')">
+    <div class="badge ${ev.type==='atelier'?'ba':'bf'}" style="flex-shrink:0">${ev.type==='formation'?(ev.sousType==='intra'?'Intra':'Inter'):'Atelier'}</div>
+    <div class="ti"><div class="tn">${ev.name}</div><div class="tdoc">📍 ${ev.lieu||'—'} · ${fd(ev.sessions[0])}</div></div>
+    <div style="font-size:12px;color:var(--mu)">${(ev.inscrits||[]).length} inscrit(s)</div>
+  </div>`).join('');
+  document.getElementById('fd-body').innerHTML=html;
+  oM('formd-modal');
+}
+
+function editFmt(id){
+  const f=fmts.find(x=>x.id===id);if(!f)return;
+  document.getElementById('fm-title').textContent=`Modifier — ${f.prenom} ${f.nom}`;
+  document.getElementById('fm-id').value=f.id;
+  document.getElementById('fm-prenom').value=f.prenom||'';
+  document.getElementById('fm-nom').value=f.nom||'';
+  document.getElementById('fm-email').value=f.email||'';
+  document.getElementById('fm-tel').value=f.tel||'';
+  document.getElementById('fm-nda').value=f.nda||'';
+  document.getElementById('fm-siret').value=f.siret||'';
+  document.getElementById('fm-spec').value=f.spec||'';
+  document.getElementById('fm-pref').value=f.pref||'email';
+  document.getElementById('fm-path').value=f.path||'';
+  document.getElementById('fm-notes').value=f.notes||'';
+  cM('formd-modal');oM('form-modal');
+}
+
+function saveFormateur(){
+  const id=document.getElementById('fm-id').value;
+  const data={
+    prenom:document.getElementById('fm-prenom').value.trim(),
+    nom:document.getElementById('fm-nom').value.trim(),
+    email:document.getElementById('fm-email').value.trim(),
+    tel:document.getElementById('fm-tel').value.trim(),
+    nda:document.getElementById('fm-nda').value.trim(),
+    siret:document.getElementById('fm-siret').value.trim(),
+    spec:document.getElementById('fm-spec').value.trim(),
+    pref:document.getElementById('fm-pref').value,
+    path:document.getElementById('fm-path').value.trim(),
+    notes:document.getElementById('fm-notes').value.trim(),
+  };
+  if(!data.prenom&&!data.nom){alert('Merci de renseigner le nom.');return;}
+  if(id){const f=fmts.find(x=>x.id===id);if(f)Object.assign(f,data);}
+  else{data.id=Date.now().toString();data.createdAt=new Date().toISOString();fmts.push(data);}
+  saveFmts();cM('form-modal');
+  document.getElementById('fm-id').value='';
+  document.getElementById('fm-title').textContent='Nouveau formateur';
+  ['fm-prenom','fm-nom','fm-email','fm-tel','fm-nda','fm-siret','fm-spec','fm-path','fm-notes'].forEach(i=>document.getElementById(i).value='');
+  rFormateurs();rAll();
+}
+
+function delFmt(id){
+  if(!confirm('Supprimer ce formateur ?'))return;
+  fmts=fmts.filter(f=>f.id!==id);saveFmts();cM('formd-modal');rFormateurs();rAll();
+}
+
+// ══════════════════════════════════════════════
+// KANBAN
+// ══════════════════════════════════════════════
+function oKanban(){
+  const ev=evs.find(e=>e.id===curEv);if(!ev)return;
+  document.getElementById('k-title').textContent=`Avancement — ${ev.name}`;
+  const tasks=ev.tasks||[];
+  const phases={};
+  // Build phase order from PF/PA/PI definitions
+  const periodDefs=ev.type==='atelier'?PA:(ev.sousType==='intra'?[...PI,...PF]:PF);
+  periodDefs.forEach(p=>{if(!phases[p.id])phases[p.id]={label:`${p.icon} ${p.label}`,color:p.color,tasks:[]};});
+  tasks.forEach(t=>{if(phases[t.period])phases[t.period].tasks.push(t);});
+  const phaseKeys=Object.keys(phases);
+  const kpClasses=['kp1','kp2','kp3','kp4','kp5'];
+  let html='';
+  phaseKeys.forEach((pid,idx)=>{
+    const ph=phases[pid];
+    const done=ph.tasks.filter(t=>t.done).length;
+    const pct=ph.tasks.length?Math.round(done/ph.tasks.length*100):0;
+    html+=`<div class="kcol ${kpClasses[idx%5]}">
+      <div class="kcol-hdr">
+        <div class="kcol-title">${ph.label}</div>
+        <span class="kcol-count">${done}/${ph.tasks.length}</span>
+      </div>
+      <div class="kcol-body">`;
+    if(!ph.tasks.length)html+=`<div class="kcol-empty">Aucune tâche</div>`;
+    ph.tasks.sort((a,b)=>new Date(a.deadline)-new Date(b.deadline)).forEach(t=>{
+      const s=ds(t.deadline,t.done);
+      html+=`<div class="kcard${t.done?' done-k':''}">
+        <div class="kc-name">
+          <div class="kchk${t.done?' ck':''}" onclick="togKT('${ev.id}',${t.id})">${t.done?'✓':''}</div>
+          <span style="${t.done?'text-decoration:line-through;color:var(--mu)':''}${t.critical?';font-weight:600':''}">${t.critical?'⚑ ':''}${t.name}</span>
+        </div>
+        <div class="kc-doc">${t.doc||''}</div>
+        <div class="kc-foot">
+          <div class="kc-ddl ${t.done?'dn':s}">${dl(t.deadline,t.done)}</div>
+          ${t.qualiopi&&t.qualiopi.length?`<span style="font-size:10px;color:var(--mu)">Q#${t.qualiopi.join(',')}</span>`:''}
+        </div>
+      </div>`;
+    });
+    // mini progress bar
+    html+=`<div style="padding:8px 8px 4px"><div style="height:3px;background:var(--brd);border-radius:2px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--ok);border-radius:2px;transition:width .3s"></div></div></div>`;
+    html+=`</div></div>`;
+  });
+  document.getElementById('kboard').innerHTML=html;
+  oM('kanban-modal');
+}
+
+function togKT(evId,tid){
+  const ev=evs.find(e=>e.id===evId);if(!ev)return;
+  const t=ev.tasks.find(t=>t.id===tid);if(!t)return;
+  t.done=!t.done;save();
+  rAll();oKanban();rPanTasks(ev);
+}
+
+// ══════════════════════════════════════════════
+// DETAIL EVENT
+// ══════════════════════════════════════════════
+function oDetail(id){
+  curEv=id;
+  const ev=evs.find(e=>e.id===id);if(!ev)return;
+  document.getElementById('d-title').textContent=ev.name;
+  const sl=ev.sessions.map((s,i)=>`S${i+1}: ${fd(s)}`).join(' · ');
+  const lbl=ev.type==='formation'?(ev.sousType==='intra'?'🏢 Intra':'👥 Inter'):'💡 Atelier';
+  const fmtName=ev.formateurId?fmts.find(f=>f.id===ev.formateurId):null;
+  const modIco={presentiel:'🏛',distanciel:'💻',hybride:'🔀'}[ev.modalite||'presentiel']||'🏛';
+  const modLbl={presentiel:'Présentiel',distanciel:'Distanciel',hybride:'Hybride'}[ev.modalite||'presentiel']||'Présentiel';
+  const actionLbl={action:'Action de formation',bilan:'Bilan de compétences',vae:'VAE',apprentissage:'Apprentissage'}[ev.action||'action']||'';
+  const tags=[
+    `${lbl}`,
+    `${modIco} ${modLbl}`,
+    ev.action&&ev.action!=='action'?actionLbl:null,
+    ev.nsf?`NSF ${ev.nsf}`:null,
+    ev.bpf===false?'Hors BPF':null,
+    ev.diplome?`🎓 ${ev.diplome.toUpperCase()}`:null,
+    ev.codeInterne?`#${ev.codeInterne}`:null,
+    fmtName?`👤 ${fmtName.prenom} ${fmtName.nom}`:null,
+  ].filter(Boolean);
+  document.getElementById('d-meta').innerHTML=`📍 ${ev.lieu||'—'} · ${sl}<br><span style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px">${tags.map(t=>`<span style="font-size:10px;background:var(--sur2);border:1px solid var(--brd);padding:2px 8px;border-radius:5px">${t}</span>`).join('')}</span>`;
+  document.getElementById('dt-inscrits').style.display=ev.type==='formation'?'block':'none';
+  document.getElementById('d-kanban-btn').style.display=ev.type==='formation'?'inline-flex':'none';
+  rPanTasks(ev);rPanIns(ev);
+  swDT(curDTab,document.getElementById(`dt-${curDTab}`));
+  oM('det-modal');
+}
+
+function rPanTasks(ev){
+  const tasks=ev.tasks||[];
+  const phases={};
+  tasks.forEach(t=>{if(!phases[t.phase])phases[t.phase]=[];phases[t.phase].push(t);});
+  const ordered=Object.keys(phases).sort((a,b)=>new Date(phases[a][0].deadline)-new Date(phases[b][0].deadline));
+  let html='';
+  ordered.forEach(ph=>{
+    const done=phases[ph].filter(t=>t.done).length;
+    html+=`<div class="tsec"><div class="tsh">${ph} <span style="font-size:10px;background:var(--sur3);padding:1px 7px;border-radius:10px;margin-left:auto;color:var(--mu)">${done}/${phases[ph].length}</span></div>`;
+    phases[ph].sort((a,b)=>new Date(a.deadline)-new Date(b.deadline)).forEach(t=>{
+      const s=ds(t.deadline,t.done);
+      const qh=t.qualiopi&&t.qualiopi.length?t.qualiopi.map(q=>`<span class="qbdg">Q#${q}</span>`).join(' '):'';
+      html+=`<div class="trow${t.done?' dr':''}">
+        <div class="tchk${t.done?' ck':''}" onclick="togET('${ev.id}',${t.id})">${t.done?'✓':''}</div>
+        <div class="ti">
+          <div class="tn" style="${t.done?'text-decoration:line-through;color:var(--mu)':''}${t.critical?';font-weight:600':''}">${t.critical?'⚑ ':''}${t.name}</div>
+          <div class="tdoc">${t.doc||''}</div>
+        </div>${qh}
+        <div class="ddl ${t.done?'dn':s}">${dl(t.deadline,t.done)}</div>
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+  const done=tasks.filter(t=>t.done).length;
+  const pct=tasks.length?Math.round(done/tasks.length*100):0;
+  html+=`<div class="psumm"><div style="display:flex;justify-content:space-between;margin-bottom:7px;font-size:12px;color:var(--mu)"><span>Avancement global</span><span><b>${pct}%</b> — ${done}/${tasks.length} tâches</span></div><div class="pb" style="height:7px"><div class="pf" style="width:${pct}%"></div></div></div>`;
+  document.getElementById('pan-tasks').innerHTML=html;
+}
+
+function rPanIns(ev){
+  const ins=ev.inscrits||[];
+  let html=`<div class="ins-box"><div class="ins-bh"><div style="font-size:13px;font-weight:600">👥 ${ins.length} inscrit${ins.length!==1?'s':''}</div><button class="btn bp bsm" onclick="oAddIns('${ev.id}')">+ Ajouter</button></div>`;
+  if(!ins.length){html+=`<div style="text-align:center;padding:20px;color:var(--mu);font-size:13px">Aucun inscrit.<br>Ajoutez-en un pour générer sa checklist individuelle.</div>`;}
+  else{
+    html+=`<div class="igrid">`;
+    ins.forEach(i=>{
+      const it=i.tasks||[];const id2=it.filter(t=>t.done).length;const ip=it.length?Math.round(id2/it.length*100):0;
+      const iu=it.filter(t=>!t.done&&dTo(t.deadline)<=7).length;
+      const htag=i.handi==='oui'?` <span style="font-size:9px;background:rgba(245,158,11,.15);color:#fcd34d;padding:1px 5px;border-radius:4px">♿</span>`:'';
+      html+=`<div class="icard" onclick="oInsD('${ev.id}','${i.id}')">
+        <div class="in2">${i.prenom} ${i.nom}${htag}</div>
+        <div class="imeta">${[i.entreprise,i.email].filter(Boolean).join(' · ')||'—'}</div>
+        ${iu>0?`<div class="iurg">⚠ ${iu} tâche${iu>1?'s':''} urgente${iu>1?'s':''}</div>`:''}
+        <div class="ipp"><div class="ipb"><div class="ipf" style="width:${ip}%"></div></div><div class="ipct">${id2}/${it.length}</div></div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+  html+=`</div>`;
+  document.getElementById('pan-inscrits').innerHTML=html;
+}
+
+function togET(evId,tid){
+  const ev=evs.find(e=>e.id===evId);if(!ev)return;
+  const t=ev.tasks.find(t=>t.id===tid);if(!t)return;
+  t.done=!t.done;save();rStats();rWeek();rEvents();rPanTasks(ev);
+}
+function swDT(tab,el){
+  curDTab=tab;
+  document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  document.getElementById('pan-tasks').style.display=tab==='tasks'?'block':'none';
+  document.getElementById('pan-inscrits').style.display=tab==='inscrits'?'block':'none';
+}
+function delEv(){
+  if(!curEv)return;if(!confirm('Supprimer cet événement et tous ses inscrits ?'))return;
+  evs=evs.filter(e=>e.id!==curEv);save();rAll();cM('det-modal');
+}
+
+// ══════════════════════════════════════════════
+// INSCRITS
+// ══════════════════════════════════════════════
+function oAddIns(evId){
+  curEv=evId;sHandi='non';
+  ['in-prenom','in-nom','in-email','in-tel','in-ent','in-fact','in-handi'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('handi-non').className='tbtn af';
+  document.getElementById('handi-oui').className='tbtn';
+  document.getElementById('fg-handi').style.display='none';
+  oM('ins-modal');
+}
+function sH(v){
+  sHandi=v;
+  document.getElementById('handi-non').className='tbtn'+(v==='non'?' af':'');
+  document.getElementById('handi-oui').className='tbtn'+(v==='oui'?' af':'');
+  document.getElementById('fg-handi').style.display=v==='oui'?'block':'none';
+}
+function addIns(){
+  const prenom=document.getElementById('in-prenom').value.trim();
+  const nom=document.getElementById('in-nom').value.trim();
+  if(!prenom&&!nom){alert('Merci de renseigner le nom.');return;}
+  const ev=evs.find(e=>e.id===curEv);if(!ev)return;
+  if(!ev.inscrits)ev.inscrits=[];
+  ev.inscrits.push({
+    id:Date.now().toString(),prenom,nom,
+    email:document.getElementById('in-email').value.trim(),
+    tel:document.getElementById('in-tel').value.trim(),
+    entreprise:document.getElementById('in-ent').value.trim(),
+    facturation:document.getElementById('in-fact').value.trim(),
+    handi:sHandi,handiDetail:document.getElementById('in-handi').value.trim(),
+    insatisfaction:[],tasks:mkInsTasks(ev.sessions[0]),
+    createdAt:new Date().toISOString()
+  });
+  save();cM('ins-modal');rStats();rWeek();rEvents();
+  oDetail(curEv);swDT('inscrits',document.getElementById('dt-inscrits'));
+}
+
+function oInsD(evId,insId){
+  curEv=evId;curIns=insId;
+  const ev=evs.find(e=>e.id===evId);if(!ev)return;
+  const ins=(ev.inscrits||[]).find(i=>i.id===insId);if(!ins)return;
+  const fullName=`${ins.prenom} ${ins.nom}`.trim();
+  document.getElementById('id-title').textContent=fullName;
+  document.getElementById('id-del').onclick=()=>delIns(evId,insId);
+  const tasks=ins.tasks||[];
+  const done=tasks.filter(t=>t.done).length;
+  const pct=tasks.length?Math.round(done/tasks.length*100):0;
+  const urg=tasks.filter(t=>!t.done&&dTo(t.deadline)<=7);
+
+  const docCfg=[
+    {label:'Devis',icon:'📄',tids:[0,1]},
+    {label:'Éval. besoins',icon:'📝',tids:[2,3]},
+    {label:'Convention',icon:'✍️',tids:[4,5]},
+    {label:'Droit image',icon:'📸',tids:[6,7]},
+    {label:'Programme',icon:'📋',tids:[8]},
+    {label:'Paiement',icon:'💶',tids:[9,10]},
+    {label:'Attestation',icon:'🏅',tids:[11]},
+    {label:'Support',icon:'💾',tids:[12]},
+    {label:'Q. à froid',icon:'🔁',tids:[13,14]},
+  ];
+  let dsh=`<div style="margin-bottom:14px"><div class="tsh" style="margin-bottom:8px">Suivi documents</div><div class="idoc-grid">`;
+  docCfg.forEach(d=>{
+    const dt=d.tids.map(i=>tasks[i]).filter(Boolean);
+    const allD=dt.length&&dt.every(t=>t.done);
+    const anyD=dt.some(t=>t.done);
+    const cls=allD?'done-d':anyD?'part-d':'';
+    const stLbl=allD?'✓ Complet':anyD?'En cours':'À faire';
+    dsh+=`<div class="idoc-card ${cls}"><div class="idoc-icon">${d.icon}</div><div class="idoc-name">${d.label}</div><div class="idoc-status">${stLbl}</div></div>`;
+  });
+  dsh+=`</div></div>`;
+
+  const handiHtml=ins.handi==='oui'?`<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:9px;padding:10px 13px;margin-bottom:12px;font-size:12px;color:#fcd34d">♿ Adaptation : ${ins.handiDetail||'à préciser'}</div>`:'';
+
+  let html=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:13px;border-bottom:1px solid var(--brd)">
+    <div class="av">${ini(fullName)}</div>
+    <div style="flex:1">
+      <div style="font-family:'DM Serif Display',serif;font-size:20px">${fullName}</div>
+      <div style="font-size:12px;color:var(--mu);margin-top:2px">${[ins.entreprise,ins.email,ins.tel].filter(Boolean).join(' · ')||'—'}</div>
+      ${ins.facturation?`<div style="font-size:11px;color:var(--mu)">Facto : ${ins.facturation}</div>`:''}
+    </div>
+  </div>
+  ${handiHtml}
+  ${urg.length?`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:9px;padding:9px 13px;margin-bottom:12px;font-size:12px;color:#fca5a5">⚠ ${urg.length} tâche${urg.length>1?'s':''} urgente${urg.length>1?'s':''}</div>`:''}
+  ${dsh}
+  <div class="tsec"><div class="tsh">Checklist individuelle</div>`;
+  tasks.sort((a,b)=>new Date(a.deadline)-new Date(b.deadline)).forEach(t=>{
+    const s=ds(t.deadline,t.done);
+    html+=`<div class="trow${t.done?' dr':''}">
+      <div class="tchk${t.done?' ck':''}" onclick="togIT('${evId}','${insId}',${t.id})">${t.done?'✓':''}</div>
+      <div class="ti">
+        <div class="tn" style="${t.done?'text-decoration:line-through;color:var(--mu)':''}${t.critical?';font-weight:600':''}">${t.critical?'⚑ ':''}${t.name}</div>
+        <div class="tdoc">${t.doc}</div>
+      </div>
+      <div class="ddl ${t.done?'dn':s}">${dl(t.deadline,t.done)}</div>
+    </div>`;
+  });
+  html+=`</div>`;
+  const insat=ins.insatisfaction||[];
+  html+=`<div class="sep"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <div style="font-size:13px;font-weight:600">⚡ Process insatisfaction</div>
+    <button class="btn bg bsm" onclick="addInsat('${evId}','${insId}')">+ Ajouter</button>
+  </div>`;
+  if(!insat.length)html+=`<div style="font-size:12px;color:var(--mu);padding:6px 0">Aucun signalement.</div>`;
+  else insat.forEach(is=>html+=`<div class="insat-row"><div class="insat-dot"></div><div><div style="font-size:13px;font-weight:500">${is.nature}</div><div style="font-size:11px;color:var(--mu);margin-top:2px">Suite : ${is.suite||'—'} · ${is.date||''}</div></div></div>`);
+  html+=`<div class="psumm" style="margin-top:14px"><div style="display:flex;justify-content:space-between;margin-bottom:7px;font-size:12px;color:var(--mu)"><span>Avancement</span><span><b>${pct}%</b> — ${done}/${tasks.length}</span></div><div class="pb" style="height:7px"><div class="pf" style="width:${pct}%"></div></div></div>`;
+  document.getElementById('id-body').innerHTML=html;
+  oM('insd-modal');
+}
+
+function togIT(evId,insId,tid){
+  const ev=evs.find(e=>e.id===evId);if(!ev)return;
+  const ins=(ev.inscrits||[]).find(i=>i.id===insId);if(!ins)return;
+  const t=ins.tasks.find(t=>t.id===tid);if(!t)return;
+  t.done=!t.done;save();rStats();rWeek();rEvents();oInsD(evId,insId);
+}
+function delIns(evId,insId){
+  if(!confirm('Retirer cet inscrit ?'))return;
+  const ev=evs.find(e=>e.id===evId);if(!ev)return;
+  ev.inscrits=(ev.inscrits||[]).filter(i=>i.id!==insId);
+  save();rStats();rWeek();rEvents();cM('insd-modal');
+  oDetail(evId);swDT('inscrits',document.getElementById('dt-inscrits'));
+}
+function addInsat(evId,insId){
+  const nature=prompt("Nature de l'insatisfaction :");if(!nature)return;
+  const suite=prompt('Suite donnée :');
+  const ev=evs.find(e=>e.id===evId);if(!ev)return;
+  const ins=(ev.inscrits||[]).find(i=>i.id===insId);if(!ins)return;
+  if(!ins.insatisfaction)ins.insatisfaction=[];
+  ins.insatisfaction.push({nature,suite,date:new Date().toLocaleDateString('fr-FR')});
+  save();oInsD(evId,insId);
+}
+
+// ══════════════════════════════════════════════
+// ADD EVENT FORM
+// ══════════════════════════════════════════════
+function sT(t){
+  sType=t;
+  document.getElementById('bf').className='tbtn'+(t==='formation'?' af':'');
+  document.getElementById('ba').className='tbtn'+(t==='atelier'?' aa':'');
+  document.getElementById('fg-sous').style.display=t==='formation'?'block':'none';
+}
+function sS(s){
+  sSous=s;
+  document.getElementById('bi').className='tbtn'+(s==='inter'?' af':'');
+  document.getElementById('bn').className='tbtn'+(s==='intra'?' af':'');
+}
+function sMod(m){
+  sMod_=m;
+  ['presentiel','distanciel','hybride'].forEach(x=>{
+    const id={presentiel:'bpres',distanciel:'bvisio',hybride:'bhybr'}[x];
+    document.getElementById(id).className='tbtn'+(m===x?' af':'');
+  });
+  const isVisio=m==='distanciel'||m==='hybride';
+  document.getElementById('visio-alert').style.display=isVisio?'block':'none';
+}
+function sBPF(v){
+  sBPF_=v;
+  document.getElementById('bbpf-oui').className='tbtn'+(v?' af':'');
+  document.getElementById('bbpf-non').className='tbtn'+(!v?' af':'');
+}
+function uS(){
+  const n=parseInt(document.getElementById('in-sess').value)||1;
+  const c=document.getElementById('sess-c');c.innerHTML='';
+  for(let i=0;i<n;i++)c.innerHTML+=`<div class="srow"><span class="slbl">Session ${i+1}</span><input type="date" class="fi" id="sess-${i}" style="flex:1"></div>`;
+}
+function addEv(){
+  const name=document.getElementById('in-name').value.trim();
+  if(!name){alert('Merci de renseigner le nom.');return;}
+  const n=parseInt(document.getElementById('in-sess').value)||1;
+  const sessions=[];
+  for(let i=0;i<n;i++){const v=document.getElementById(`sess-${i}`)?.value;if(!v){alert(`Date session ${i+1} manquante.`);return;}sessions.push(v);}
+  const sous=sType==='formation'?sSous:null;
+  const fid=document.getElementById('in-form-sel').value||null;
+  const action=sType==='formation'?(document.getElementById('in-action').value||'action'):null;
+  const nsf=sType==='formation'?(document.getElementById('in-nsf').value||''):null;
+  const diplome=sType==='formation'?(document.getElementById('in-diplome').value||''):null;
+  const code=sType==='formation'?(document.getElementById('in-code').value.trim()||''):null;
+  const modalite=sType==='formation'?sMod_:'presentiel';
+  const bpf=sType==='formation'?sBPF_:false;
+  evs.push({
+    id:Date.now().toString(),type:sType,sousType:sous,name,sessions,
+    lieu:document.getElementById('in-lieu').value.trim(),
+    formateurId:fid,modalite,action,nsf,diplome,codeInterne:code,bpf,
+    tasks:mkEvTasks(sType,sous,sessions[0],modalite),inscrits:[],
+    createdAt:new Date().toISOString()
+  });
+  save();
+  // reset
+  document.getElementById('in-name').value='';
+  document.getElementById('in-sess').value='1';
+  document.getElementById('in-lieu').value='';
+  document.getElementById('in-code').value='';
+  uS();sT('formation');sS('inter');sMod('presentiel');sBPF(true);
+  cM('add-modal');rAll();
+}
+
+// ══════════════════════════════════════════════
+// FILTERS & NAV
+// ══════════════════════════════════════════════
+function sf(btn,f){document.querySelectorAll('[data-f]').forEach(b=>b.classList.remove('on'));btn.classList.add('on');cF=f;rEvents();}
+function scf(btn,f){document.querySelectorAll('[data-c]').forEach(b=>b.classList.remove('on'));btn.classList.add('on');cCF=f;rCal();}
+function nM(d){calM+=d;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}rCal();}
+
+// ══════════════════════════════════════════════
+// MODALS & VIEWS
+// ══════════════════════════════════════════════
+function oM(id){document.getElementById(id).classList.add('open');}
+function cM(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+function swV(v,el){
+  document.querySelectorAll('.vw').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.ntab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('vw-'+v).classList.add('active');
+  if(el)el.classList.add('active');
+  if(v==='calendar')rCal();
+  if(v==='qualiopi')rQ();
+  if(v==='formateurs')rFormateurs();
+}
+
+function rAll(){rStats();rWeek();rEvents();rFormateurs();}
+
+// ══════════════════════════════════════════════
+// FIREBASE CONFIG + AUTH
+// ══════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyBaXSLWdtp3RkGTzb6CySLWdya_bjdPXCc",
+  authDomain: "suivi-qualiopi.firebaseapp.com",
+  projectId: "suivi-qualiopi",
+  storageBucket: "suivi-qualiopi.firebasestorage.app",
+  messagingSenderId: "190812241119",
+  appId: "1:190812241119:web:177b6881bdb64b23f9bd6a",
+  measurementId: "G-VNNECP9SBE"
+};
+
+let db = null;
+let auth = null;
+
+function initFirebase(){
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  auth = firebase.auth();
+}
+
+// ── Sauvegarde Firestore ──
+async function save(){
+  if(!db) return;
+  try{
+    await db.collection('data').doc('events').set({value: JSON.stringify(evs)});
+    showSyncBadge();
+  }catch(e){console.error('save',e);}
+}
+async function saveFmts(){
+  if(!db) return;
+  try{
+    await db.collection('data').doc('formateurs').set({value: JSON.stringify(fmts)});
+    showSyncBadge();
+  }catch(e){console.error('saveFmts',e);}
+}
+
+// ── Temps réel Firestore ──
+function listenData(){
+  db.collection('data').doc('events').onSnapshot(doc=>{
+    if(doc.exists){try{evs=JSON.parse(doc.data().value);}catch(e){}}
+    rAll();
+  });
+  db.collection('data').doc('formateurs').onSnapshot(doc=>{
+    if(doc.exists){try{fmts=JSON.parse(doc.data().value);}catch(e){}}
+    rFormateurs();rStats();
+  });
+}
+
+function showSyncBadge(){
+  const b=document.getElementById('sync-badge');
+  if(b){b.style.opacity='1';setTimeout(()=>b.style.opacity='0',1500);}
+}
+
+// ── Auth Firebase ──
+function initAuth(){
+  initFirebase();
+  // Écoute l'état de connexion
+  auth.onAuthStateChanged(user=>{
+    if(user){
+      // Connecté — afficher l'app
+      document.getElementById('auth-screen').style.display='none';
+      document.getElementById('app-shell').style.display='block';
+      // Afficher l'email dans le header
+      const el=document.getElementById('user-email');
+      if(el) el.textContent=user.email;
+      uS();
+      listenData();
+    } else {
+      // Non connecté — afficher le login
+      document.getElementById('auth-screen').style.display='flex';
+      document.getElementById('app-shell').style.display='none';
+      setTimeout(()=>document.getElementById('auth-email').focus(),100);
+    }
+  });
+}
+
+async function authSubmit(){
+  const email=document.getElementById('auth-email').value.trim();
+  const pw=document.getElementById('auth-pw').value;
+  const errEl=document.getElementById('auth-err');
+  errEl.textContent='';
+  if(!email||!pw){errEl.textContent='Merci de remplir tous les champs.';return;}
+  try{
+    await auth.signInWithEmailAndPassword(email,pw);
+    // onAuthStateChanged prend le relais
+  }catch(e){
+    const msgs={
+      'auth/user-not-found':'Email inconnu.',
+      'auth/wrong-password':'Mot de passe incorrect.',
+      'auth/invalid-email':'Email invalide.',
+      'auth/too-many-requests':'Trop de tentatives. Réessayez dans quelques minutes.',
+      'auth/invalid-credential':'Email ou mot de passe incorrect.',
+    };
+    errEl.textContent=msgs[e.code]||'Erreur de connexion.';
+  }
+}
+
+async function authReset(){
+  const email=document.getElementById('auth-email').value.trim();
+  if(!email){
+    document.getElementById('auth-err').textContent='Entrez votre email d\'abord.';
+    return;
+  }
+  try{
+    await auth.sendPasswordResetEmail(email);
+    document.getElementById('auth-err').style.color='var(--ok)';
+    document.getElementById('auth-err').textContent='Email de réinitialisation envoyé !';
+  }catch(e){
+    document.getElementById('auth-err').textContent='Email inconnu.';
+  }
+}
+
+function logout(){
+  if(!confirm('Se déconnecter ?')) return;
+  auth.signOut();
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+initAuth();
+</script>
+</div><!-- /app-shell -->
+</body>
+</html>
